@@ -1,0 +1,161 @@
+import pytest
+import unittest
+import logging
+from collections import namedtuple
+from collections import OrderedDict
+import datetime
+import pytz
+
+import apache_beam as beam
+from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
+from apache_beam.testing.util import assert_that
+from apache_beam.testing.util import equal_to
+
+from .test_resample import Record
+from .test_resample import ResampledRecord
+from .series_data import simple_series_data
+from .series_data import real_series_data
+from .resample import Resample
+from .compute_adjacency import ComputeAdjacency
+from .compute_encounters import ComputeEncounters
+from .compute_encounters import SingleEncounter
+from pipeline.transforms.create_messages import CreateMessages
+from .ungroup import Ungroup
+from .merge_encounters import MergeEncounters
+
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+
+inf = float('inf')
+
+def ts(x):
+    return datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc)
+
+
+def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
+    if closest_neighbor is None:
+        nbr_dist = inf
+    else:
+        nbr_id, nbr_dist, nbr_args = closest_neighbor
+        closest_neighbor = ResampledRecord(*nbr_args, id=nbr_id)
+    record = record._replace(id=vessel_id)
+    return (vessel_id,
+        compute_adjacency.AnnotatedRecord(neighbor_count=neighbor_count, closest_distance=nbr_dist,
+            record=record, closest_neighbor=closest_neighbor)
+        )
+
+
+@pytest.mark.filterwarnings('ignore:Using fallback coder:UserWarning')
+@pytest.mark.filterwarnings('ignore:The compiler package is deprecated and removed in Python 3.x.:DeprecationWarning')
+class TestComputeAdjacency(unittest.TestCase):
+
+    def test_simple_encounters(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(simple_series_data)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to(self._get_simple_expected()))
+
+    def test_real_data(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(real_series_data)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to(self._get_real_expected()))
+
+    def test_message_generation(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(real_series_data)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                | CreateMessages()
+            )
+            assert_that(results, equal_to(self._get_messages_expected()))
+
+    def test_merge_messages(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(real_series_data)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                | MergeEncounters(min_hours_between_encounters=24)
+                | CreateMessages()
+            )
+            assert_that(results, equal_to(self._get_merged_expected()))
+
+    def _get_simple_expected(self):
+        return [
+                    (1, 2, SingleEncounter(
+                        ts("2011-01-01T16:10:00Z"),
+                        ts("2011-01-01T17:00:00Z"),
+                        -1.4719963, 55.21973783333333,
+                        0.20333088100150815,
+                        0.6467305031568592, 6, 5)),
+                    (2, 1, SingleEncounter(
+                        ts("2011-01-01T16:10:00Z"),
+                        ts("2011-01-01T17:00:00Z"),
+                        -1.4710235833333334, 55.21933776666666,
+                        0.20333088100150815,
+                        1.1175558891689739, 5, 6))
+        ]
+
+
+    def _get_real_expected(self):
+        return [
+            (441910000, 563418000, SingleEncounter(
+                          ts("2015-03-19T07:40:00Z"),
+                          ts("2015-03-19T20:10:00Z"),
+                          -27.47909444042379, 38.533749458956926,
+                          0.028845166034633843,
+                          0.20569554161530468, 7, 6)),
+            (563418000, 441910000, SingleEncounter(
+                          ts("2015-03-19T07:40:00Z"),
+                          ts("2015-03-19T10:10:00Z"),
+                          -27.480823491781422, 38.53562707753466,
+                          0.030350584066300215,
+                          0.17049202182476167, 4, 5))
+        ]
+
+    def _get_messages_expected(self):
+        return [
+            dict([('start_time', datetime.datetime(2015, 3, 19, 7, 40, tzinfo=pytz.utc)), 
+                  ('end_time', datetime.datetime(2015, 3, 19, 10, 10, tzinfo=pytz.utc)), 
+                  ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
+                  ('median_distance_km', 0.030350584066300215), 
+                  ('median_speed_knots', 0.17049202182476167), 
+                  ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
+                  ('vessel_1_id', 563418000), 
+                  ('vessel_2_id', 441910000)]), 
+            dict([('start_time', datetime.datetime(2015, 3, 19, 7, 40, tzinfo=pytz.utc)), 
+                  ('end_time', datetime.datetime(2015, 3, 19, 20, 10, tzinfo=pytz.utc)), 
+                  ('mean_latitude', -27.47909444042379), 
+                  ('mean_longitude', 38.533749458956926), 
+                  ('median_distance_km', 0.028845166034633843), 
+                  ('median_speed_knots', 0.20569554161530468), 
+                  ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
+                  ('vessel_1_id', 441910000), 
+                  ('vessel_2_id', 563418000)])] 
+
+
+    def _get_merged_expected(self):
+        return [{'median_speed_knots': 0.02959787505046703, 'start_time': 
+                 datetime.datetime(2015, 3, 19, 7, 40, tzinfo=pytz.utc), 'mean_longitude': 38.53443222934882, 
+                 'vessel_2_point_count': 10, 'mean_latitude': -27.47972318637202, 
+                 'end_time': datetime.datetime(2015, 3, 19, 20, 10, tzinfo=pytz.utc), 
+                 'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
+                 'vessel_2_id': 563418000, 'vessel_1_id': 441910000}]
