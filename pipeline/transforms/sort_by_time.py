@@ -2,7 +2,9 @@ from __future__ import division
 from collections import defaultdict
 from apache_beam import PTransform
 from apache_beam import Map
-from .create_records import Record
+from apache_beam import typehints
+
+from ..objects.record import Record
 
 
 def median(iterable):
@@ -13,6 +15,8 @@ def median(iterable):
     return sum(seq[quotient - 1:quotient + 1]) / 2
 
 
+@typehints.with_input_types(typehints.Tuple[int, typehints.Iterable[Record]])
+@typehints.with_output_types(typehints.Tuple[int, typehints.Iterable[Record]])
 class SortByTime(PTransform):
 
     def sort_and_uniquify_by_time(self, item):

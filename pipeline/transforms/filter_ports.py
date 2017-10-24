@@ -16,10 +16,10 @@ class FilterPorts(PTransform):
         self.mask = Mask(os.path.join(parent_dir, "dist_to_port_10km.pickle"))
 
     def not_near_port(self, msg):
-        return self.mask.query(msg.mean_lat, msg.mean_lon) 
+        return self.mask.query(msg.mean_latitude, msg.mean_longitude) 
 
     def expand(self, xs):
         return (
             xs
-            | FlatMap(self.not_near_port)
+            | Filter(self.not_near_port)
         )

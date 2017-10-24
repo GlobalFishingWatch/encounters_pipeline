@@ -11,8 +11,8 @@ from apache_beam.testing.util import equal_to
 from .test_resample import Record
 from .test_resample import ResampledRecord
 from .series_data import simple_series_data
-from . import compute_adjacency
-from . import resample
+from pipeline.transforms import compute_adjacency
+from pipeline.transforms import resample
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -29,7 +29,7 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
     record = record._replace(id=vessel_id)
     return (vessel_id,
         compute_adjacency.AnnotatedRecord(neighbor_count=neighbor_count, closest_distance=nbr_dist,
-            record=record, closest_neighbor=closest_neighbor)
+            closest_neighbor=closest_neighbor, **record._asdict())
         )
 
 

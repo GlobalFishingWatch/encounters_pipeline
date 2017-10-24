@@ -4,14 +4,11 @@ import math
 import logging
 import pytz
 from more_itertools import peekable
-from collections import namedtuple
-from .create_records import Record
+from ..objects.record import Record
+from ..objects.resampled_record import ResampledRecord
 
 from apache_beam import PTransform
 from apache_beam import Map
-
-ResampledRecord = namedtuple("ResampledRecord", 
-    Record._fields + ('point_density',))  
 
 
 class Resample(PTransform):

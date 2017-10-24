@@ -1,11 +1,11 @@
 import datetime as dt
 import pytz
-from . import create_records
-from . import resample
+from pipeline.objects import record
+from pipeline.transforms import resample
 
 def Record(timestamp, lat, lon, id=0, speed=0.0):
     timestamp = dt.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=pytz.utc)
-    return create_records.Record(id=id, timestamp=timestamp, lat=lat, lon=lon, speed=speed)
+    return record.Record(id=id, timestamp=timestamp, lat=lat, lon=lon, speed=speed)
 
 def ResampledRecord(timestamp, lat, lon, point_density=1.0, id=0, speed=0.0):
     if not isinstance(timestamp, dt.datetime):

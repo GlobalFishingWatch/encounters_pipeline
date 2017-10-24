@@ -3,12 +3,11 @@ from apache_beam import Map
 from apache_beam import FlatMap
 from apache_beam import GroupByKey
 import apache_beam as beam
-from collections import namedtuple
 import datetime
 import pytz
 from statistics import median
 
-from .create_encounter_records import Encounter
+from ..objects.encounter import Encounter
 
 inf = float('inf')
 epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
@@ -21,43 +20,47 @@ class MergeEncounters(PTransform):
     def __init__(self, min_hours_between_encounters):
         self.min_hours_between_encounters = min_hours_between_encounters
 
-    def key_by_ordered_mmsi(self, item):
-        id_1, id_2, encounter = item
+    def key_by_ordered_mmsi(self, encounter):
+        id_1 = encounter.vessel_1_id
+        id_2 = encounter.vessel_2_id
         if id_1 < id_2:
-            return (id_1, id_2), item
+            return (id_1, id_2), encounter
         else:
-            return (id_2, id_1), item
+            return (id_2, id_1), encounter
 
     def encounter_from_records(self, id_1, id_2, records):
         # n_points are the points that correspond to the means in the records
-        n_points = max(sum(env.vessel_1_points for (env, p1, p2) in records), 1)
-        return id_1, id_2, Encounter(
+        n_points = max(sum(env.vessel_1_point_count for (env, p1, p2) in records), 1)
+        return Encounter(
+            vessel_1_id = id_1,
+            vessel_2_id = id_2,
             start_time = min(env.start_time for (env, p1, p2) in records),
             end_time = max(env.end_time for (env, p1, p2) in records),
-            mean_lat = sum(env.vessel_1_points * env.mean_lat 
+            mean_latitude = sum(env.vessel_1_point_count * env.mean_latitude 
                             for (env, p1, p2) in records) / n_points,
-            mean_lon = sum(env.vessel_1_points * env.mean_lon 
+            mean_longitude = sum(env.vessel_1_point_count * env.mean_longitude
                             for (env, p1, p2) in records) / n_points,
             # NOTE: this is the median of medians, not the true median
             # TODO: discuss with Nate
             median_speed_knots = median(env.median_distance_km for (env, p1, p2) in records),
             median_distance_km = median(env.median_distance_km for (env, p1, p2) in records),
             # These points correspond to key_id_?, not id_?
-            vessel_1_points = sum(p1 for (env, p1, p2) in records),
-            vessel_2_points = sum(p2 for (env, p1, p2) in records),
+            vessel_1_point_count = sum(p1 for (env, p1, p2) in records),
+            vessel_2_point_count = sum(p2 for (env, p1, p2) in records),
         )
 
     def merge_encounters(self, item):
-        (key_id_1, key_id_2), id_encounters = item
-        id_encounters = list(id_encounters)
-        print("XXX", id_encounters[0])
-        id_encounters.sort(key=lambda x: x[2].start_time)
+        (key_id_1, key_id_2), encounters = item
+        encounters = list(encounters)
+        encounters.sort(key=lambda x: x.start_time)
         merged = []
         end = epoch
         records = None
-        for (id1, id2, enc) in id_encounters:
-            v1_pts = enc.vessel_1_points
-            v2_pts = enc.vessel_2_points
+        for enc in encounters:
+            id1 = enc.vessel_1_id
+            id2 = enc.vessel_2_id
+            v1_pts = enc.vessel_1_point_count
+            v2_pts = enc.vessel_2_point_count
             if id1 == key_id_2:
                 v1_pts, v2_pts = v2_pts, v1_pts 
             rcd = (enc, v1_pts, v2_pts)

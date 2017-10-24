@@ -5,7 +5,7 @@ from apache_beam import GroupByKey
 import logging
 import math
 from collections import defaultdict
-from collections import namedtuple
+from ..objects.annotated_record import AnnotatedRecord
 
 import s2sphere
 
@@ -29,9 +29,6 @@ def S2CellId(lat, lon):
         cellid = cellid.parent(ANCHORAGES_S2_SCALE)
         return cellid
 
-        
-AnnotatedRecord = namedtuple("AnnotatedRecord",
-    ["neighbor_count", "closest_neighbor", "closest_distance", "record"])
 
 class ComputeAdjacency(PTransform):
 
@@ -115,16 +112,16 @@ class ComputeAdjacency(PTransform):
                 annotated.append(AnnotatedRecord(neighbor_count = len(distance_map[id1]), 
                                                  closest_neighbor = rcd2, 
                                                  closest_distance = distance,
-                                                 record = rcd1))
+                                                 **rcd1._asdict()))
             else:
                 annotated.append(AnnotatedRecord(neighbor_count = 0, 
                                                  closest_neighbor = None, 
                                                  closest_distance = inf,
-                                                 record = rcd1))
+                                                 **rcd1._asdict()))
         return time, annotated
 
     def tag_with_id(self, item):
-        return (item.record.id, item)
+        return (item.id, item)
 
     def tag_with_time(self, item):
         return (item.timestamp, item)
@@ -136,7 +133,7 @@ class ComputeAdjacency(PTransform):
     def sort_by_time(self, item):
         key, value = item
         value = list(value)
-        value.sort(key=lambda x: x.record.timestamp)
+        value.sort(key=lambda x: x.timestamp)
         return key, value
 
     def expand(self, xs):

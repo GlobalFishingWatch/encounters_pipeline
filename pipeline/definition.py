@@ -1,12 +1,12 @@
 from pipeline.transforms.source import Source
-from pipeline.transforms.create_records import CreateRecords
+from pipeline.objects.record import RecordsFromDicts
 from pipeline.transforms.group_by_id import GroupById
 from pipeline.transforms.sort_by_time import SortByTime
 from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.ungroup import Ungroup
-from pipeline.transforms.create_messages import CreateMessages
+from pipeline.objects.encounter import EncountersToDicts
 from pipeline.transforms.sink import BQSink, TextSink
 
 
@@ -23,7 +23,7 @@ class PipelineDefinition():
         (
             pipeline
             | Source(self.options.source)
-            | CreateRecords()
+            | RecordsFromDicts()
 
             | GroupById()
             | SortByTime()
@@ -32,7 +32,7 @@ class PipelineDefinition():
             | ComputeAdjacency(max_adjacency_distance_km=1.0) # TOD: parameterize
 
             | ComputeEncounters(max_km_for_encounter=2, min_minutes_for_encounter=120) # TOD: parameterize
-            | CreateMessages()
+            | EncountersToDicts()
             | sink
         )
 
@@ -40,7 +40,7 @@ class PipelineDefinition():
 
 
 from pipeline.transforms.source import EncounterSource
-from pipeline.transforms.create_encounter_records import CreateEncounterRecords
+from pipeline.objects.encounter import EncountersFromDicts
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.filter_ports import FilterPorts
 
@@ -65,10 +65,10 @@ class ConsolidationPipelineDefinition():
         (
             pipeline
             | EncounterSource(query)
-            | CreateEncounterRecords()
+            | EncountersFromDicts()
             | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
             | FilterPorts()
-            | CreateMessages()
+            | EncountersToDicts()
             | sink
         )
 
