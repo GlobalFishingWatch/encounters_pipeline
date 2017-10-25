@@ -40,7 +40,7 @@ path_2 = [
     ResampledRecord("2011-01-01 17:50:00 UTC", -1.3998985, 55.2037574, id=2)
 ]
 
-simple_series_data = [(1, path_1), (2, path_2)]
+simple_series_data = path_1 + path_2
 
 
 def text_to_records(vessel_id, text):
@@ -402,4 +402,4 @@ series2 = text_to_records(mmsi_2, """1.426723864E9,-27.4495792389,38.6691398621,
 1.426808115E9,-27.4486637115,38.5238609314,516409.625
 1.426809304E9,-27.4456787109,38.5228614807,516409.625""")
 
-real_series_data = [(mmsi_1, series1), (mmsi_2, series2)]
+real_series_data = series1 + series2

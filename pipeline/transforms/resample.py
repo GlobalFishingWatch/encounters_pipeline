@@ -4,9 +4,9 @@ import math
 import logging
 import pytz
 from more_itertools import peekable
-from ..objects.record import Record
 from ..objects.resampled_record import ResampledRecord
-
+from .group_by_id import GroupById
+from .sort_by_time import SortByTime
 from apache_beam import PTransform
 from apache_beam import Map
 
@@ -92,6 +92,8 @@ class Resample(PTransform):
     def expand(self, xs):
         return (
             xs
+            | GroupById()
+            | SortByTime()
             | Map(self.resample)
         )
 

@@ -1,5 +1,4 @@
-import ujson
-from collections import namedtuple
+import json as ujson
 from . import jsondict
 import apache_beam as beam
 from apache_beam import typehints
@@ -10,109 +9,88 @@ import pytz
 
 epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
 
-def datetime_to_s(x):
+def _datetime_to_s(x):
     return (x - epoch).total_seconds()
 
-def s_to_datetime(x):
+def _s_to_datetime(x):
     return epoch + datetime.timedelta(seconds=x)
 
 
-class DatetimeCoder(beam.coders.Coder):
 
-    def encode(self, value):
-        return ujson.dumps((value - epoch).total_seconds())
+class NamedtupleCoder(beam.coders.Coder):
+    """A coder used for reading and writing nametuples to/from json"""
+    # Overide target with actual target
+    target = None
+    # Overide time_fields with sequence of field names containing datetime instances
+    time_fields = []
 
-    def decode(self, value):
-        return epoch + datetime.timedelta(seconds=ujson.loads(value))
+    @classmethod
+    def _encode(cls, value):        
+        replacements = {x: _datetime_to_s(getattr(value, x)) for x in cls.time_fields}
+        return value._replace(**replacements)
+
+    @classmethod
+    def encode(cls, value):
+        return ujson.dumps(cls._encode(value))
+
+    @classmethod
+    def _decode(cls, value):
+        replacements = {x: _s_to_datetime(getattr(value, x)) for x in cls.time_fields}
+        return value._replace(**replacements)
+
+    @classmethod
+    def decode(cls, value):
+        return cls._decode(cls.target(*ujson.loads(value)))
 
     def is_deterministic(self):
-        return True  
+        return True 
 
-beam.coders.registry.register_coder(datetime.datetime, DatetimeCoder)
+    @classmethod
+    def register(cls):
+        beam.coders.registry.register_coder(cls.target, cls)
 
+        @typehints.with_input_types(typehints.Tuple)
+        @typehints.with_output_types(cls.target)
+        class FromTuple(beam.PTransform):
+            """converts a tuple to a namedtuple"""
 
-def coded_namedtuple(name, fields, timefields):
+            def from_tuple(self, x):
+                return cls._decode(cls.target(*x))
 
-    cls = namedtuple(name, fields)
-
-    class NamedtupleCoder(beam.coders.Coder):
-        """A coder used for reading and writing nametuples to/from json"""
-
-        def encode(self, value):
-            replacements = {x: datetime_to_s(getattr(value, x)) for x in timefields}
-            return ujson.dumps(value._replace(**replacements))
-
-        def decode(self, value):
-            ntuple = cls(*ujson.loads(value))
-            replacements = {x: s_to_datetime(getattr(ntuple, x)) for x in timefields}
-            return ntuple._replace(**replacements)
-
-        def is_deterministic(self):
-            return True  
-
-    beam.coders.registry.register_coder(cls, NamedtupleCoder)
-    beam.coders.registry.register_coder(typehints.Tuple[int, typehints.Iterable[cls]], NamedtupleCoder)
-    beam.coders.registry.register_coder(typehints.Tuple[typehints.Tuple[float, float], typehints.Iterable[cls]], NamedtupleCoder)
+            def expand(self, p):
+                return p | beam.Map(self.from_tuple)
 
 
-    @typehints.with_input_types(typehints.Tuple)
-    @typehints.with_output_types(cls)
-    class FromTuple(beam.PTransform):
-        """converts a tuple to a namedtuple"""
+        @typehints.with_input_types(typehints.Dict)
+        @typehints.with_output_types(cls.target)
+        class FromDict(beam.PTransform):
+            """converts a Dict to a namedtuple"""
 
-        def from_tuple(self, x):
-            return cls(*x)
+            def from_dict(self, x):
+                return cls._decode(cls.target(**x))
 
-        def expand(self, p):
-            return p | beam.Map(self.from_tuple)
-
-
-    @typehints.with_input_types(typehints.Dict)
-    @typehints.with_output_types(cls)
-    class FromDict(beam.PTransform):
-        """converts a Dict to a namedtuple"""
-
-        def from_dict(self, x):
-            return cls(**x)
-
-        def expand(self, p):
-            return p | beam.Map(self.from_dict)
+            def expand(self, p):
+                return p | beam.Map(self.from_dict)
 
 
-    @typehints.with_input_types(cls)
-    @typehints.with_output_types(jsondict.JSONDict)
-    class ToDict(beam.PTransform):
-        """converts namedtuple to a JSONDict"""
+        @typehints.with_input_types(cls.target)
+        @typehints.with_output_types(jsondict.JSONDict)
+        class ToDict(beam.PTransform):
+            """converts namedtuple to a JSONDict"""
 
-        def to_dict(self, x):
-            return jsondict.JSONDict(**x._asdict())
+            def to_dict(self, x):
+                return jsondict.JSONDict(**cls._encode(x)._asdict())
 
-        def expand(self, p):
-            return p | beam.Map(self.to_dict)
+            def expand(self, p):
+                return p | beam.Map(self.to_dict)
 
-    return cls, FromTuple, FromDict, ToDict
-
-
-(Record, RecordsFromTuples, RecordsFromDicts, RecordsToDicts) = coded_namedtuple("Record",
-                                ["id", "timestamp", "lat", "lon", "speed"], 
-                                ['timestamp'])
+        return FromTuple, FromDict, ToDict
 
 
-(ResampledRecord, ResampledRecordsFromTuples, 
-    ResampledRecordsFromDicts, ResampledRecordsToDicts) = coded_namedtuple("ResampledRecord", 
-    Record._fields + ('point_density',), ['timestamp'])  
 
-(AnnotatedRecord, AnnotatedRecordsFromTuples, 
- AnnotatedRecordsFromDicts, AnnotatedRecordsToDicts) = coded_namedtuple("AnnotatedRecord",
-    ResampledRecord._fields + ("neighbor_count", "closest_neighbor", "closest_distance"), ['timestamp'])
 
-(Encounter, EncountersFromTuples, EncountersFromDicts, EncountersToDicts) = coded_namedtuple(
-    "Encounter",
-    ["vessel_1_id", "vessel_2_id", "start_time", "end_time", 
-     "mean_latitude", "mean_longitude", 
-     "median_distance_km", "median_speed_knots", 
-     "vessel_1_point_count", "vessel_2_point_count"],
-     ['start_time', 'end_time'])
+
+
 
 
 

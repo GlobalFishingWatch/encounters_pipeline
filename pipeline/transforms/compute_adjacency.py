@@ -72,29 +72,6 @@ class ComputeAdjacency(PTransform):
                     dist_map[rcd2.id].append((distance, rcd1))
         return dist_map
 
-    def compute_distance_map_x(self, records, max_distance_km):
-        """
-
-        returns:
-
-            dict[id1] -> [(id2, distance)]
-
-        where distance < max_distance
-        """
-        # First try, just use brute force
-        # Can be sped using S2 cell / dictionary magic
-        dist_map = defaultdict(list)
-        for i, rcd1 in enumerate(records):
-            for j, rcd2 in enumerate(records):
-                if j <= i:
-                    # Records is iterable so cant use records[i+1:]
-                    continue
-                distance = compute_distance(rcd1, rcd2)
-                if distance <= max_distance_km:
-                    dist_map[rcd1.id].append((distance, rcd2))
-                    dist_map[rcd2.id].append((distance, rcd1))
-        return dist_map
-
 
     def annotate_adjacency(self, resampled_item):
         time, records = resampled_item

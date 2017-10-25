@@ -2,7 +2,7 @@ SELECT
   lat        AS lat,
   lon        AS lon,
   speed      AS speed,
-  timestamp  AS timestamp,
+  FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
   mmsi       AS id
 FROM
   TABLE_DATE_RANGE([world-fishing-827:pipeline_classify_p_p429_resampling_2.], 
