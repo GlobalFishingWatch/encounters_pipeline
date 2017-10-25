@@ -66,7 +66,7 @@ class MergeEncounters(PTransform):
             rcd = (enc, v1_pts, v2_pts)
             # Records are ordered by start time. 
             #
-            if enc.start_time - end > datetime.timedelta(self.min_hours_between_encounters):
+            if enc.start_time - end >= datetime.timedelta(hours=self.min_hours_between_encounters):
                 if records:
                     merged.append(self.encounter_from_records(key_id_1, key_id_2, records))
                 records = [rcd]

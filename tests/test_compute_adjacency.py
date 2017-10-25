@@ -35,18 +35,6 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
 @pytest.mark.filterwarnings('ignore:The compiler package is deprecated and removed in Python 3.x.:DeprecationWarning')
 class TestComputeAdjacency(unittest.TestCase):
 
-    # def test_without_resampling(self):
-
-    #     with _TestPipeline() as p:
-    #         results = (
-    #             p
-    #             | beam.Create(simple_series_data)
-    #             | beam.FlatMap(lambda (key, value): [(key, x) for x in value])
-    #             | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
-    #             | beam.FlatMap(lambda (key, value): [(key, x) for x in value])
-    #         )
-    #         assert_that(results, equal_to(self._get_expected(interpolated=False)))
-
     def test_with_resampling(self):
 
         with _TestPipeline() as p:
@@ -55,10 +43,8 @@ class TestComputeAdjacency(unittest.TestCase):
                 | beam.Create(simple_series_data)
                 | resample.Resample(increment_s=60*10, max_gap_s=60*70)
                 | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
-                | beam.FlatMap(lambda (key, value): value)
             )
             assert_that(results, equal_to(self._get_expected(interpolated=True)))
-
 
     def _get_expected(self, interpolated=True):
         density = 0.5 if interpolated else 1.0

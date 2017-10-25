@@ -98,10 +98,21 @@ class ComputeEncounters(PTransform):
 
         return [x for (key, value) in encounters.items() for x in value]
 
+    def tag_with_id(self, item):
+        return (item.id, item)
+
+    def sort_by_time(self, item):
+        key, value = item
+        value = list(value)
+        value.sort(key=lambda x: x.timestamp)
+        return key, value
 
     def expand(self, xs):
         return (
             xs
+            | Map(self.tag_with_id)
+            | "Group by id" >> GroupByKey()
+            | Map(self.sort_by_time)
             | FlatMap(self.compute_encounters)
         )
  

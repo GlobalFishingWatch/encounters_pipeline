@@ -8,7 +8,7 @@ from ..objects.resampled_record import ResampledRecord
 from .group_by_id import GroupById
 from .sort_by_time import SortByTime
 from apache_beam import PTransform
-from apache_beam import Map
+from apache_beam import FlatMap
 
 
 class Resample(PTransform):
@@ -87,13 +87,13 @@ class Resample(PTransform):
 
     def resample(self, item):
         key, records = item
-        return key, self.resample_records(records)
+        return self.resample_records(records)
 
     def expand(self, xs):
         return (
             xs
             | GroupById()
             | SortByTime()
-            | Map(self.resample)
+            | FlatMap(self.resample)
         )
 
