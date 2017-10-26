@@ -25,3 +25,8 @@ def setup(parser):
         help='whether to save the main session',
         action='store_true',
     )
+    google.add_argument(
+        '--disk_size_gb',
+        help='how many gb of persistent storage to allocate',
+        default='50',
+    )
