@@ -152,7 +152,7 @@ class TestComputeAdjacency(unittest.TestCase):
 
 
     def _get_merged_expected(self):
-        return [{'median_speed_knots': 0.02959787505046703, 'start_time': 
+        return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
                  1426750800.0, 'mean_longitude': 38.53443222934882, 
                  'vessel_2_point_count': 10, 'mean_latitude': -27.47972318637202, 
                  'end_time':  1426795800.0, 
