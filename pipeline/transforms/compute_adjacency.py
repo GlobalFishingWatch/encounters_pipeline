@@ -43,14 +43,18 @@ class ComputeAdjacency(PTransform):
         # A plausible neighbor for a given cell is a vessel in
         # that cell or any surrounding cell.
         s2_to_ndxs = defaultdict(list)
+        s2_to_tokens = {}
         tagged_records = []
         for i, rcd in enumerate(records):
             cellid = S2CellId(rcd.lat, rcd.lon)
-            token = cellid.to_token()
-            tagged_records.append((token, rcd))
-            s2_to_ndxs[token].append(i)
-            for nbrid in cellid.get_all_neighbors(ENCOUNTERS_S2_SCALE):
-                s2_to_ndxs[nbrid.to_token()].append(i)
+            if cellid not in s2_to_tokens:
+                s2_to_tokens[cellid] = tokens = [cellid.to_token()]
+                for nbrid in cellid.get_all_neighbors(ENCOUNTERS_S2_SCALE):
+                    tokens.append(nbrid.to_token())
+            tokens = s2_to_tokens[cellid]
+            tagged_records.append((tokens[0], rcd))
+            for tkn in tokens:
+                s2_to_ndxs[tkn].append(i)
 
         for i, (token, rcd1) in enumerate(tagged_records):
             closest_dist = self.max_adjacency_distance_km
