@@ -14,10 +14,15 @@ class MergePipelineDefinition():
     def build(self, pipeline):
 
         if self.options.local:
-            writer = io.WriteToText('output/encounters')
+            writer_merged = io.WriteToText('output/encounters_merged')
+            writer_filtered = io.WriteToText('output/encounters_filtered')
         elif self.options.remote:
-            writer = WriteToBq(
-                table=self.options.sink,
+            writer_merged = WriteToBq(
+                table=self.options.sink + 'Merged',
+                write_disposition=self.options.sink_write_disposition,
+            )
+            writer_filtered = WriteToBq(
+                table=self.options.sink + 'Filtered',
                 write_disposition=self.options.sink_write_disposition,
             )
 
@@ -31,14 +36,22 @@ class MergePipelineDefinition():
         FROM [{}]
         """.format(self.options.raw_sink)
 
-        (
+        merged = (
             pipeline
             | io.Read(io.gcp.bigquery.BigQuerySource(query=query))
             | EncountersFromDicts()
             | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
+        )
+
+        (merged 
+            | "MergedToDicts" >> EncountersToDicts()
+            | "WriteMerged" >> writer_merged
+        )
+
+        (merged
             | FilterPorts()
-            | EncountersToDicts()
-            | writer
+            | "FilteredToDicts" >> EncountersToDicts()
+            | "WriteFiltered" >> writer_filtered
         )
 
         return pipeline
