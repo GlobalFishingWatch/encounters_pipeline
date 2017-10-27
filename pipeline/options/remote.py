@@ -17,9 +17,10 @@ def setup(parser):
         action='store_true',
         default=False,
     )
-
-
-
+    parser.add_argument(
+        '--merged_sink',
+        help='BigQuery table names to which the merged data is uploaded.',
+    )
 
     required = parser.add_argument_group('remote required arguments')
     required.add_argument(
@@ -27,3 +28,4 @@ def setup(parser):
         help='BigQuery table names to which the final data is uploaded.',
         required=True,
     )
+

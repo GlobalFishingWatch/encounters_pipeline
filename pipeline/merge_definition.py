@@ -17,12 +17,15 @@ class MergePipelineDefinition():
             writer_merged = io.WriteToText('output/encounters_merged')
             writer_filtered = io.WriteToText('output/encounters_filtered')
         elif self.options.remote:
-            writer_merged = WriteToBq(
-                table=self.options.sink + 'Merged',
-                write_disposition=self.options.sink_write_disposition,
-            )
+            if self.options.merged_sink:
+                writer_merged = WriteToBq(
+                    table=self.options.sink + 'Merged',
+                    write_disposition=self.options.sink_write_disposition,
+                )
+            else:
+                writer_merged = None
             writer_filtered = WriteToBq(
-                table=self.options.sink + 'Filtered',
+                table=self.options.sink,
                 write_disposition=self.options.sink_write_disposition,
             )
 
@@ -43,10 +46,11 @@ class MergePipelineDefinition():
             | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
         )
 
-        (merged 
-            | "MergedToDicts" >> EncountersToDicts()
-            | "WriteMerged" >> writer_merged
-        )
+        if writer_merged is not None:
+            (merged 
+                | "MergedToDicts" >> EncountersToDicts()
+                | "WriteMerged" >> writer_merged
+            )
 
         (merged
             | FilterPorts()

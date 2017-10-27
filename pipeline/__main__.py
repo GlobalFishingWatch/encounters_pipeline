@@ -8,12 +8,13 @@ import pipeline.options.parser as parser
 def run():
     (options, pipeline_options) = parser.parse()
 
-    definition = RawPipelineDefinition(options)
-    pipeline = definition.build(beam.Pipeline(options=pipeline_options))
-    job = pipeline.run()
+    if not options.postprocess_only:
+        definition = RawPipelineDefinition(options)
+        pipeline = definition.build(beam.Pipeline(options=pipeline_options))
+        job = pipeline.run()
 
-    if options.remote:
-        job.wait_until_finish()
+        if options.remote:
+            job.wait_until_finish()
 
     merge_definition = MergePipelineDefinition(options)
     merge_pipeline = merge_definition.build(beam.Pipeline(options=pipeline_options))
