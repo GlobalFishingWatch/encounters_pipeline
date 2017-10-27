@@ -42,7 +42,7 @@ class MergeEncounters(PTransform):
                             for (env, p1, p2) in records) / n_points,
             # NOTE: this is the median of medians, not the true median
             # TODO: discuss with Nate
-            median_speed_knots = median(env.median_distance_km for (env, p1, p2) in records),
+            median_speed_knots = median(env.median_speed_knots for (env, p1, p2) in records),
             median_distance_km = median(env.median_distance_km for (env, p1, p2) in records),
             # These points correspond to key_id_?, not id_?
             vessel_1_point_count = sum(p1 for (env, p1, p2) in records),
@@ -53,7 +53,6 @@ class MergeEncounters(PTransform):
         (key_id_1, key_id_2), encounters = item
         encounters = list(encounters)
         encounters.sort(key=lambda x: x.start_time)
-        merged = []
         end = epoch
         records = None
         for enc in encounters:
@@ -68,14 +67,13 @@ class MergeEncounters(PTransform):
             #
             if enc.start_time - end >= datetime.timedelta(hours=self.min_hours_between_encounters):
                 if records:
-                    merged.append(self.encounter_from_records(key_id_1, key_id_2, records))
+                    yield self.encounter_from_records(key_id_1, key_id_2, records)
                 records = [rcd]
             else:
                 records.append(rcd)
             end = enc.end_time
         if records:
-            merged.append(self.encounter_from_records(key_id_1, key_id_2, records))      
-        return merged
+            yield self.encounter_from_records(key_id_1, key_id_2, records)      
 
 
     def expand(self, xs):
