@@ -19,7 +19,7 @@ class MergePipelineDefinition():
         elif self.options.remote:
             if self.options.merged_sink:
                 writer_merged = WriteToBq(
-                    table=self.options.sink + 'Merged',
+                    table=self.options.merged_sink,
                     write_disposition=self.options.sink_write_disposition,
                 )
             else:
