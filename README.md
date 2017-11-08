@@ -1,52 +1,45 @@
-# Dataflow pipeline template
+# Events pipeline 
 
-This repository is a template for python dataflow pipelines at Global Fishing
-Watch. It's intended to be cloned and used as a template for new micropipelines
-using apache beam in the google cloud dataflow platform.
+This repository contains the fishing events pipeline, a dataflow pipeline which
+extracts summarized fishing events from a collection of scored AIS messages.
 
-It contains all the plumbing needed to validate and parse command line
-arguments, as well as reading data from a source bigquery table and dumping the
-results in another sink bigquery table.
+# Running
 
-## Usage
+## Dependencies
 
-Clone the repository, delete the `.git` and run `git init` to have a fresh
-repository ready to customize.
+You just need [docker](https://www.docker.com/) and
+[docker-compose](https://docs.docker.com/compose/) in your machine to run the
+pipeline. No other dependency is required.
 
-You'll need to take a look at a couple of files that you need to customize
-before starting:
+## Setup
 
-* Customize the name and description of your project at `setup.py` and the
-  docker image name at `docker-compose.yaml`. Look for `[TODO]` marks for
-instructions on what to change and how.
+The pipeline reads it's input from BigQuery, so you need to first authenticate
+with your google cloud account inside the docker images. To do that, you need
+to run this command and follow the instructions:
 
-* Customize the arguments that are needed to run your pipeline. These are
-  spread at 3 different files:
+```
+docker-compose run gcloud auth application-default login
+```
 
-    * `pipeline/options/all.py`: Contains options that are required for both
-      local and remote runs.
+## CLI
 
-    * `pipeline/options/local.py`: Contains options that are required only on
-      local runs.
+The pipeline includes a CLI that can be used to start both local test runs and
+remote full runs. Just run `docker-compose run pipeline --help` and follow the
+instructions there.
 
-    * `pipeline/options/remote.py`: Contains options that are required only on
-      remote runs.
+### Examples:
 
-* Customize the bigquery schemas for inputs and outputs at `pipeline/schemas/input.py`
-  and `pipeline/schemas/output.py`.
-
-* Create a sample query to run your pipeline in local test mode. Take a look at
-  `examples/local.sql` and customize for what you need here. Take care to only
-return a few rows here so that local test runs are quick and cheap.
-
-* Create the transforms you are going to use at `pipeline/transforms/`. See
-  `pipeline/transforms/sample.py` for a simple sample transform.
-
-* Define your pipeline at `pipeline/definition.py` by composing the transforms
-  you created.
-
-* Copy `README.template.md` to `README.md` and customize with your project
-  documentation. Look for `[TODO]` marks and complete as needed.
+        docker-compose run pipeline \
+                --source_table pipeline_classify_p_p516_daily \
+                --start_date 2017-01-01 \
+                --end_date 2017-01-01 \
+                --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
+                --sink world-fishing-827:machine_learning_dev_ttl_30d.encounters_test \
+                remote \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-test \
+                --max_num_workers 200
 
 # License
 

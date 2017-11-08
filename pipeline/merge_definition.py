@@ -20,13 +20,13 @@ class MergePipelineDefinition():
             if self.options.merged_sink:
                 writer_merged = WriteToBq(
                     table=self.options.merged_sink,
-                    write_disposition=self.options.sink_write_disposition,
+                    write_disposition="WRITE_TRUNCATE",
                 )
             else:
                 writer_merged = None
             writer_filtered = WriteToBq(
                 table=self.options.sink,
-                write_disposition=self.options.sink_write_disposition,
+                write_disposition="WRITE_TRUNCATE",
             )
 
         query = """SELECT
