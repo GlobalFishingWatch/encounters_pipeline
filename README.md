@@ -21,6 +21,16 @@ to run this command and follow the instructions:
 docker-compose run gcloud auth application-default login
 ```
 
+## Overview
+
+The pipeline takes `start_date` and `end_date`. The pipeline pads `start_date`
+by one day to warm up, reads the data from from `source_table` and computes
+encounters over the specified window.
+In incremental mode, `start_date` and `end_date` would be on the same date.  The results
+of this encounter are *appended* to the specified `raw_sink` table. A second pipeline
+is then run over this second table, merging encounters that are close in time into
+one long encounter and *replacing* the table specified in `sink` with the merged results.
+
 ## CLI
 
 The pipeline includes a CLI that can be used to start both local test runs and
@@ -28,6 +38,23 @@ remote full runs. Just run `docker-compose run pipeline --help` and follow the
 instructions there.
 
 ### Examples:
+
+In incremental mode, the form of the command is
+
+        docker-compose run pipeline \
+                --source_table SOURCE_TABLE \
+                --start_date DATE \
+                --end_date DATE \
+                --raw_sink RAW_TABLE \
+                --sink FINAL_TABLE \
+                remote \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-pip \
+                --max_num_workers 200
+
+Note that raw_table needs to be persistent since it is appended to with each run.
+Here is a concrete example:
 
         docker-compose run pipeline \
                 --source_table pipeline_classify_p_p516_daily \
