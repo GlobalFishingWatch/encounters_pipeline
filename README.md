@@ -1,7 +1,7 @@
-# Events pipeline 
+# Encounters pipeline 
 
-This repository contains the fishing events pipeline, a dataflow pipeline which
-extracts summarized fishing events from a collection of scored AIS messages.
+This repository contains the encounters pipeline, which finds vessel encounters
+based on AIS messages.
 
 # Running
 
