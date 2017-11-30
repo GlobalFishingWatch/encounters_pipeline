@@ -57,7 +57,7 @@ Note that raw_table needs to be persistent since it is appended to with each run
 Here is a concrete example:
 
         docker-compose run pipeline \
-                --source_table pipeline_classify_p_p516_daily \
+                --source_table pipeline_classify_p_p516_daily. \
                 --start_date 2017-01-01 \
                 --end_date 2017-01-01 \
                 --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \

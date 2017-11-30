@@ -33,7 +33,7 @@ class RawPipelineDefinition():
           FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
           mmsi       AS id
         FROM
-          TABLE_DATE_RANGE([world-fishing-827:{table}.], 
+          TABLE_DATE_RANGE([world-fishing-827:{table}], 
                                 TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
         WHERE
           lat   IS NOT NULL AND
