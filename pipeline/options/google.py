@@ -30,3 +30,12 @@ def setup(parser):
         help='how many gb of persistent storage to allocate',
         default='50',
     )
+    google.add_argument(
+        '--worker_machine_type',
+        dest='machine_type',
+        help='type of machine to use',
+    )
+    google.add_argument(
+        '--experiments',
+        help='experimental options',
+    )

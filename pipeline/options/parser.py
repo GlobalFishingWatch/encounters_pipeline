@@ -57,5 +57,11 @@ def parse():
         standard_options.runner = 'DataflowRunner'
         setup_options = pipeline_options.view_as(beam.SetupOptions)
         setup_options.setup_file = './setup.py'
+        if options.experiments:
+            pipeline_options._visible_options.experiments = None
+            pipeline_options.experiments = options.experiments
+        if options.machine_type:
+            worker_options = pipeline_options.view_as(beam.WorkerOptions)
+            worker_options.machine_type = options.machine_type
 
     return (options, pipeline_options)
