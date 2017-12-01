@@ -68,6 +68,23 @@ Here is a concrete example:
                 --job_name encounters-test \
                 --max_num_workers 200
 
+It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX:`, which will
+be prepended to ids from that source. For example:
+
+        docker-compose run pipeline \
+                --source_table ais:pipeline_classify_p_p516_daily. \
+                --source_table peru_vms:pipeline_p_p588_peru.classify_ \
+                --start_date 2015-01-01 \
+                --end_date 2015-01-01 \
+                --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \
+                --sink world-fishing-827:machine_learning_dev_ttl_30d.mixed_encounters_test \
+                remote \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name mixed-encounters-test \
+                --max_num_workers 200
+
+
 # License
 
 Copyright 2017 Global Fishing Watch

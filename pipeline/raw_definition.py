@@ -31,7 +31,7 @@ class RawPipelineDefinition():
           lon        AS lon,
           speed      AS speed,
           FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-          mmsi       AS id
+          CONCAT("{id_prefix}", STRING(mmsi)) AS id
         FROM
           TABLE_DATE_RANGE([world-fishing-827:{table}], 
                                 TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
@@ -41,14 +41,21 @@ class RawPipelineDefinition():
           speed IS NOT NULL
         """
         start_date = datetime.datetime.strptime(self.options.start_date, '%Y-%m-%d') 
-        start_window = start_date - datetime.timedelta(days=1)
+        start_of_full_window = start_date - datetime.timedelta(days=1)
         end_date= datetime.datetime.strptime(self.options.end_date, '%Y-%m-%d') 
-        while start_window <= end_date:
-            end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(table=self.options.source_table, start=start_window, end=end_window)
-            print(query)
-            yield query
-            start_window = end_window + datetime.timedelta(days=1)
+        for table in self.options.source_tables:
+            if ':' in table:
+                id_prefix, table = table.split(':', 1)
+                id_prefix += ':'
+            else:
+                id_prefix = ''
+            start_window = start_of_full_window
+            while start_window <= end_date:
+                end_window = min(start_window + datetime.timedelta(days=999), end_date)
+                query = template.format(id_prefix=id_prefix, table=table, start=start_window, end=end_window)
+                print(query)
+                yield query
+                start_window = end_window + datetime.timedelta(days=1)
 
     def build(self, pipeline):
         writer = WriteToBq(
