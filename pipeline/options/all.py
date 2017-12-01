@@ -10,6 +10,8 @@ def setup(parser):
     required.add_argument(
         '--source_table',
         help="BigQuery table to pull data from",
+        action='append',
+        dest='source_tables',
         required=True,
     )
     required.add_argument(

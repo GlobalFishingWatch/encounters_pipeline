@@ -12,7 +12,7 @@ def build():
     builder.add("median_speed_knots", "FLOAT")
 
     for v in [1, 2]:
-        builder.add("vessel_{}_id".format(v), "INTEGER")
+        builder.add("vessel_{}_id".format(v), "STRING")
         builder.add("vessel_{}_point_count".format(v), "INTEGER")
 
     return builder.schema
