@@ -1,20 +1,20 @@
 version: '2'
 services:
-  pipeline:
+  create_raw_encounters:
+    entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]  
     image: gfw/pipe-encounters
     build: .
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
-
-  gcloud:
+  merge_encounters:
+    entrypoint: ["python", "-m", "pipeline.merge_encounters"]  
     image: gfw/pipe-encounters
     build: .
-    entrypoint: gcloud
     volumes:
+      - ".:/opt/project"
       - "gcp:/root/.config/"
-
 volumes:
   gcp:
-
+    external: True
 

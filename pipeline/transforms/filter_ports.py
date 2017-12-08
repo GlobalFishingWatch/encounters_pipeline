@@ -13,7 +13,7 @@ parent_dir = os.path.abspath(os.path.join(this_dir, ".."))
 class FilterPorts(PTransform):
 
     def __init__(self):
-        self.mask = Mask(os.path.join(parent_dir, "dist_to_port_10km.pickle"))
+        self.mask = Mask(os.path.join(parent_dir, "data/dist_to_port_10km.pickle"))
 
     def not_near_port(self, msg):
         # TODO: also filter incoming messages
