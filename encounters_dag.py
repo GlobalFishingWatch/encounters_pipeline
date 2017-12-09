@@ -28,7 +28,14 @@ DOCKER_IMAGE = '{{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }}'
 THIS_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DAG_FILES = THIS_SCRIPT_DIR
 
+# We do this since the raw code is designed to append the date
+# to random names, not necessarily after a dot. This upsets
+# table_sensor. TODO: use get to grab actual table, break apart
+# put together into SOURCE_DATASET and SOURCE_TABLE_PREFIX. Then
+# build SOURCE_TABLE (at this time put . back on end in data)
 SOURCE_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}'
+SOURCE_TABLE_WITH_SUFFIX = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}.'
+
 RAW_TABLE = '{{ var.json.PIPE_ENCOUNTERS.RAW_TABLE }}'
 SINK_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SINK_TABLE }}'
 
@@ -110,7 +117,7 @@ with DAG('pipe_encounters_v0_1',  schedule_interval=timedelta(days=1), max_activ
             'project': PROJECT_ID,
             'start_date': '{{ ds }}',
             'end_date': '{{ ds }}',
-            'source_table': SOURCE_TABLE,
+            'source_table': SOURCE_TABLE_WITH_SUFFIX,
             'raw_table': RAW_TABLE,
             'staging_location': GCS_STAGING_DIR,
             'temp_location': GCS_TEMP_DIR,
