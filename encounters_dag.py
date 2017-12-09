@@ -107,7 +107,7 @@ with DAG('pipe_encounters_v0_5',  schedule_interval=timedelta(days=1), max_activ
     # Note: task_id must use '-' instead of '_' because it gets used to create the dataflow job name, and
     # only '-' is allowed
     create_raw_encounters = TemplatedDataFlowPythonOperator(
-        task_id='create-raw_encounters',
+        task_id='create-raw-encounters',
         py_file=python_target,
         options={
             'startup_log_path': NORMALIZED_LOG_FILE,
