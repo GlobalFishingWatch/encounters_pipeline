@@ -87,10 +87,10 @@ def table_sensor(task_id, table_id, dataset_id, dag, **kwargs):
 
 with DAG('pipe_encounters_v0_1',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
 
-    yesterday_exists = table_sensor(task_id='yesterday_exists', dataset_id=INPUT_TABLE,
+    yesterday_exists = table_sensor(task_id='yesterday_exists', dataset_id=SOURCE_TABLE,
                                 table_id=YESTERDAY_TABLE, dag=dag)
 
-    today_exists = table_sensor(task_id='today_exists', dataset_id=INPUT_TABLE,
+    today_exists = table_sensor(task_id='today_exists', dataset_id=SOURCE_TABLE,
                                 table_id=TODAY_TABLE, dag=dag)
 
     python_target = Variable.get('DATAFLOW_DOCKER_STUB')
