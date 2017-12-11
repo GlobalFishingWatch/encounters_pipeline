@@ -23,8 +23,6 @@ PROJECT_ID='{{ var.value.GCP_PROJECT_ID }}'
 
 DATASET_ID='{{ var.value.IDENT_DATASET }}'
 
-DOCKER_IMAGE = '{{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }}'
-
 THIS_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DAG_FILES = THIS_SCRIPT_DIR
 
@@ -36,14 +34,6 @@ SOURCE_TABLE_WITH_SUFFIX = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}.'
 
 RAW_TABLE = '{{ var.json.PIPE_ENCOUNTERS.RAW_TABLE }}'
 SINK_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SINK_TABLE }}'
-
-GCP_VOLUME = '{{ var.value.GCP_VOLUME }}'
-
-# See note about logging in readme.md
-LOG_DIR = pp.join(THIS_SCRIPT_DIR, 'logs')
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-NORMALIZED_LOG_FILE = pp.join(LOG_DIR, 'normalized_startup.log')
 
 TODAY_TABLE='{{ ds_nodash }}' 
 YESTERDAY_TABLE='{{ yesterday_ds_nodash }}'
@@ -90,7 +80,7 @@ def table_sensor(task_id, table_id, dataset_id, dag, **kwargs):
     )
 
 
-with DAG('pipe_encounters_v0_9',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
+with DAG('pipe_encounters_v0_10',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
 
     yesterday_exists = table_sensor(task_id='yesterday_exists', dataset_id=SOURCE_TABLE,
                                 table_id=YESTERDAY_TABLE, dag=dag)
@@ -98,7 +88,7 @@ with DAG('pipe_encounters_v0_9',  schedule_interval=timedelta(days=1), max_activ
     today_exists = table_sensor(task_id='today_exists', dataset_id=SOURCE_TABLE,
                                 table_id=TODAY_TABLE, dag=dag)
 
-    python_target = Variable.get('DATAFLOW_DOCKER_STUB')
+    python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
 
     logging.info("target: %s", python_target)
 
@@ -108,10 +98,9 @@ with DAG('pipe_encounters_v0_9',  schedule_interval=timedelta(days=1), max_activ
         task_id='create-raw-encounters',
         py_file=python_target,
         options={
-            'startup_log_path': NORMALIZED_LOG_FILE,
-            'docker_image': DOCKER_IMAGE,
-            'gcp_volume': GCP_VOLUME,
-            'python_module': 'pipeline.create_raw_encounters',
+            'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
+                                         'pipe_encounters/create-raw-encounters.log'),
+            'command': '{{ var.value.DOCKER_RUN }} python -m pipeline.create_raw_encounters',
             'project': PROJECT_ID,
             'start_date': '{{ ds }}',
             'end_date': '{{ ds }}',
@@ -132,10 +121,10 @@ with DAG('pipe_encounters_v0_9',  schedule_interval=timedelta(days=1), max_activ
         task_id='merge-encounters',
         py_file=python_target,
         options={
-            'startup_log_path': NORMALIZED_LOG_FILE,
-            'docker_image': DOCKER_IMAGE,
-            'gcp_volume': GCP_VOLUME,
-            'python_module': 'pipeline.merge_encounters',
+            'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
+                                         'pipe_encounters/merge-encounters.log'),
+            'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }}'
+                       'python -m pipeline.merge_encounters',
             'project': PROJECT_ID,
             'start_date': '{{ ds }}',
             'end_date': '{{ ds }}',
