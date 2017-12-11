@@ -80,7 +80,7 @@ def table_sensor(task_id, table_id, dataset_id, dag, **kwargs):
     )
 
 
-with DAG('pipe_encounters_v0_10',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
+with DAG('pipe_encounters_v0_11',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
 
     yesterday_exists = table_sensor(task_id='yesterday_exists', dataset_id=SOURCE_TABLE,
                                 table_id=YESTERDAY_TABLE, dag=dag)
@@ -100,7 +100,8 @@ with DAG('pipe_encounters_v0_10',  schedule_interval=timedelta(days=1), max_acti
         options={
             'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
                                          'pipe_encounters/create-raw-encounters.log'),
-            'command': '{{ var.value.DOCKER_RUN }} python -m pipeline.create_raw_encounters',
+            'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ANCHORAGES.DOCKER_IMAGE }} '
+                       'python -m pipeline.create_raw_encounters',
             'project': PROJECT_ID,
             'start_date': '{{ ds }}',
             'end_date': '{{ ds }}',
