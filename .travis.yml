@@ -1,11 +1,20 @@
-sudo: required
-dist: trusty
 language: python
+
+sudo: required
 
 services: docker
 
-before_script:
+cache:
+  directories:
+  - ~/.cache/pip
+
+python:
+- 2.7
+
+install:
+  - docker volume create --name=gcp
   - docker-compose build
 
 script:
-  - ./test_all
+  - docker-comoose --version
+  - docker-compose run test
