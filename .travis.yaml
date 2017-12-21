@@ -4,7 +4,7 @@ language: python
 
 before_script:
   - export PATH=$HOME/.local/bin:$PATH
-  - sudo pip install google-api-python-client pyyaml python-dateutil NewlineJSON pytz yattag
+  - sudo pip install google-api-python-client pyyaml python-dateutil NewlineJSON pytz yattag pytest
 
 script:
   - ./test_all
