@@ -1,18 +1,29 @@
 import datetime
 import logging
+import pytz
+
 from apache_beam import io
+from apache_beam import Filter
 from apache_beam import Flatten
+from apache_beam import Map
 from apache_beam import Pipeline
+from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.runners import PipelineState
+from apache_beam.transforms.window import TimestampedValue
+
+from pipe_tools.coders.jsoncoder import JSONDict
+from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.record import RecordsFromDicts
 from pipeline.transforms.group_by_id import GroupById
 from pipeline.transforms.sort_by_time import SortByTime
 from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
-from pipeline.objects.encounter import EncountersToDicts
-from pipeline.options.create_options import CreateOptions
 from pipeline.transforms.writers import WriteToBq
+from pipeline.objects.encounter import EncountersToDicts
+from pipeline.objects.namedtuples import _datetime_to_s
+from pipeline.options.create_options import CreateOptions
+from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 
 
 RESAMPLE_INCREMENT_MINUTES = 10.0
@@ -57,11 +68,21 @@ def create_queries(options):
             start_window = end_window + datetime.timedelta(days=1)
 
 
+def extract_nbr_dict(item):
+    return JSONDict(vessel_id=item.id, 
+                    timestamp=_datetime_to_s(item.timestamp), 
+                    neighbor_count=item.neighbor_count)
+
+
 def run(options):
 
     p = Pipeline(options=options)
 
     create_options = options.view_as(CreateOptions)
+    cloud_options = options.view_as(GoogleCloudOptions)
+
+    start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
+    end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
     writer = WriteToBq(
         table=create_options.raw_table,
@@ -72,18 +93,34 @@ def run(options):
                     for (i, x) in enumerate(create_queries(options))]
 
 
-    (
-        sources
+    adjacencies = (sources
         | Flatten()
         | RecordsFromDicts()
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=MAX_ENCOUNTER_DISTANCE_KM) 
+        )
+
+    (adjacencies
         | ComputeEncounters(max_km_for_encounter=MAX_ENCOUNTER_DISTANCE_KM, 
                             min_minutes_for_encounter=MIN_ENCOUNTER_TIME_MINUTES) 
         | EncountersToDicts()
         | writer
     )
+
+    if create_options.neighbor_table:
+        (adjacencies
+            | Filter(lambda x: start_date <= x.timestamp <= end_date)
+            | Map(extract_nbr_dict)
+            | Map(lambda x: TimestampedValue(x, x['timestamp']))
+            | WriteToBigQueryDatePartitioned(
+                temp_gcs_location=cloud_options.temp_location,
+                table=create_options.neighbor_table,
+                write_disposition="WRITE_TRUNCATE",
+                schema=nbr_count_build_schema(),
+                project=cloud_options.project
+                )
+            )
 
 
     result = p.run()
