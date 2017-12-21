@@ -26,5 +26,5 @@ class CreateOptions(PipelineOptions):
                                  ' the new data, or WRITE_APPEND to add the new date without. Defaults to WRITE_APPEND.')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        required.add_argument('--neighbor_table', 
+        optional.add_argument('--neighbor_table', 
                             help='Table to write neighbor counts to')

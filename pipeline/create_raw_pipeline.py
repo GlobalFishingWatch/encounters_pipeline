@@ -63,10 +63,6 @@ def create_queries(options):
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
-
-
-
-
 def run(options):
 
     p = Pipeline(options=options)
@@ -76,6 +72,7 @@ def run(options):
 
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
+
 
     writer = WriteToBq(
         table=create_options.raw_table,
