@@ -1,5 +1,5 @@
 import json as ujson
-from . import jsondict
+from pipe_tools.coders.jsoncoder import JSONDict
 import apache_beam as beam
 from apache_beam import typehints
 from apache_beam import PTransform
@@ -74,12 +74,12 @@ class NamedtupleCoder(beam.coders.Coder):
 
 
         @typehints.with_input_types(cls.target)
-        @typehints.with_output_types(jsondict.JSONDict)
+        @typehints.with_output_types(JSONDict)
         class ToDict(beam.PTransform):
             """converts namedtuple to a JSONDict"""
 
             def to_dict(self, x):
-                return jsondict.JSONDict(**cls._encode(x)._asdict())
+                return JSONDict(**cls._encode(x)._asdict())
 
             def expand(self, p):
                 return p | beam.Map(self.to_dict)

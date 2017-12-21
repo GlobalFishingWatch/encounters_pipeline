@@ -17,6 +17,8 @@ The pipeline reads it's input from BigQuery, so you need to first authenticate
 with your google cloud account inside the docker images. To do that, you need
 to run this command and follow the instructions:
 
+TODO: used global GCP volume now: add correct instructions for that.
+
 ```
 docker-compose run gcloud auth application-default login
 ```
@@ -56,7 +58,7 @@ In incremental mode, the form of the command is
 Note that raw_table needs to be persistent since it is appended to with each run.
 Here is a concrete example:
 
-        docker-compose run pipeline \
+        docker-compose run create_raw_encounters \
                 --source_table pipeline_classify_p_p516_daily. \
                 --start_date 2017-01-01 \
                 --end_date 2017-01-01 \
@@ -68,6 +70,36 @@ Here is a concrete example:
                 --job_name encounters-test \
                 --max_num_workers 200
 
+
+
+        docker-compose run create_raw_encounters \
+                --source_table pipeline_classify_p_p516_daily. \
+                --start_date 2017-01-01 \
+                --end_date 2017-01-01 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-create-test \
+                --max_num_workers 200 \
+                --setup_file ./setup.py \
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100
+
+
+        docker-compose run merge_encounters \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_test \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-merge-test \
+                --max_num_workers 200 \
+                --setup_file ./setup.py \
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100
+
+
 It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX:`, which will
 be prepended to ids from that source. For example:
 
@@ -76,9 +108,8 @@ be prepended to ids from that source. For example:
                 --source_table peru_vms:pipeline_p_p588_peru.classify_ \
                 --start_date 2015-01-01 \
                 --end_date 2015-01-01 \
-                --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \
+                --raw_sink_table world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \
                 --sink world-fishing-827:machine_learning_dev_ttl_30d.mixed_encounters_test \
-                remote \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name mixed-encounters-test \
