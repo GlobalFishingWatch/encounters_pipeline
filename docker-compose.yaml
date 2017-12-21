@@ -14,6 +14,13 @@ services:
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
+  test:
+    entrypoint: ["py.test"]  
+    image: gfw/pipe-encounters
+    build: .
+    volumes:
+      - ".:/opt/project"
+      - "gcp:/root/.config/"
 volumes:
   gcp:
     external: True
