@@ -3,15 +3,11 @@ import logging
 import pytz
 
 from apache_beam import io
-from apache_beam import Filter
 from apache_beam import Flatten
-from apache_beam import Map
 from apache_beam import Pipeline
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.runners import PipelineState
-from apache_beam.transforms.window import TimestampedValue
 
-from pipe_tools.coders.jsoncoder import JSONDict
 from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.record import RecordsFromDicts
 from pipeline.transforms.group_by_id import GroupById
@@ -19,9 +15,9 @@ from pipeline.transforms.sort_by_time import SortByTime
 from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
+from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
 from pipeline.transforms.writers import WriteToBq
 from pipeline.objects.encounter import EncountersToDicts
-from pipeline.objects.namedtuples import _datetime_to_s
 from pipeline.options.create_options import CreateOptions
 from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 
@@ -68,10 +64,7 @@ def create_queries(options):
             start_window = end_window + datetime.timedelta(days=1)
 
 
-def extract_nbr_dict(item):
-    return JSONDict(vessel_id=item.id, 
-                    timestamp=_datetime_to_s(item.timestamp), 
-                    neighbor_count=item.neighbor_count)
+
 
 
 def run(options):
@@ -110,9 +103,7 @@ def run(options):
 
     if create_options.neighbor_table:
         (adjacencies
-            | Filter(lambda x: start_date <= x.timestamp <= end_date)
-            | Map(extract_nbr_dict)
-            | Map(lambda x: TimestampedValue(x, x['timestamp']))
+            | CreateTimestampedAdjacencies(start_date, end_date)
             | WriteToBigQueryDatePartitioned(
                 temp_gcs_location=cloud_options.temp_location,
                 table=create_options.neighbor_table,
