@@ -15,15 +15,14 @@ class CreateTimestampedAdjacencies(PTransform):
         self.end_date = end_date
 
 
-    def extract_nbr_dict(item):
+    def extract_nbr_dict(self, item):
         return JSONDict(vessel_id=item.id, 
                         timestamp=_datetime_to_s(item.timestamp), 
                         neighbor_count=item.neighbor_count)
 
-
     def expand(self, xs):
         return (xs
-            | Filter(lambda x: self.fstart_date <= x.timestamp <= self.end_date)
+            | Filter(lambda x: self.start_date <= x.timestamp <= self.end_date)
             | Map(self.extract_nbr_dict)
             | Map(lambda x: TimestampedValue(x, x['timestamp']))
         )
