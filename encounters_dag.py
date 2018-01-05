@@ -48,8 +48,8 @@ GCS_TEMP_DIR='gs://%s/dataflow-temp' % BUCKET
 GCS_STAGING_DIR='gs://%s/dataflow-staging' % BUCKET
 
 
-start_date_string = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
-processing_start_date = datetime.strptime(start_date_string, "%Y-%m-%d")
+processing_start_date_string = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
+processing_start_date = datetime.strptime(processing_start_date_string, "%Y-%m-%d")
 
 
 default_args = {
@@ -149,7 +149,7 @@ def build_dag(dag_id, schedule_interval):
                 'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }} '
                            'python -m pipeline.merge_encounters',
                 'project': PROJECT_ID,
-                'start_date': processing_start_date, # Run merge from first date processed
+                'start_date': processing_start_date_string, # Run merge from first date processed
                 'end_date': end_date,
                 'raw_table': RAW_TABLE,
                 'sink': SINK_TABLE,
