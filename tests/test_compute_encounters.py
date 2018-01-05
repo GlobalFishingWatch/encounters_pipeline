@@ -80,7 +80,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
-                | encounter.EncountersToDicts()
+                | encounter.Encounter.ToDict()
             )
             assert_that(results, equal_to(self._get_messages_expected()))
 
@@ -93,7 +93,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 | MergeEncounters(min_hours_between_encounters=24)
-                | encounter.EncountersToDicts()
+                | encounter.Encounter.ToDict()
             )
             assert_that(results, equal_to(self._get_merged_expected()))
 

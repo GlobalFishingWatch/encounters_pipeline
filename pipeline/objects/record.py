@@ -9,7 +9,7 @@ class RecordCoder(NamedtupleCoder):
     time_fields = ['timestamp']
 
 
-RecordsFromTuples, RecordsFromDicts, RecordsToDicts = RecordCoder.register()
+RecordCoder.register()
 
 
 

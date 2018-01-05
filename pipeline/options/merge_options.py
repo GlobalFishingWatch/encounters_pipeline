@@ -14,6 +14,10 @@ class MergeOptions(PipelineOptions):
                             help='Table to pull raw (unmerged) encounters to')
         required.add_argument('--sink_table', 
                             help='Table to write file, merged and filtered encounters to')
+        required.add_argument('--start_date', required=True, 
+                              help="First date to merge.")
+        required.add_argument('--end_date', required=True, 
+                            help="Last date (inclusive) to merge.")
 
         optional.add_argument('--merged_sink_table', 
                             help='Table to write merged, but unfiltered encounters to')

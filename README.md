@@ -75,8 +75,8 @@ Here is a concrete example:
         docker-compose run create_raw_encounters \
                 --source_table pipeline_classify_p_p516_daily. \
                 --start_date 2017-01-01 \
-                --end_date 2017-01-01 \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
+                --end_date 2017-01-07 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_ \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-create-test \
@@ -88,8 +88,10 @@ Here is a concrete example:
 
 
         docker-compose run merge_encounters \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
-                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_test \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_ \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters \
+                --start_date 2017-01-01 \
+                --end_date 2017-01-07 \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-merge-test \
