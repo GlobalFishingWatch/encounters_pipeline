@@ -48,7 +48,7 @@ GCS_TEMP_DIR='gs://%s/dataflow-temp' % BUCKET
 GCS_STAGING_DIR='gs://%s/dataflow-staging' % BUCKET
 
 
-start_date_string = Variable.get('PIPE_ANCHORAGES', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
+start_date_string = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
 processing_start_date = datetime.strptime(start_date_string, "%Y-%m-%d")
 
 
