@@ -3,6 +3,7 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     PIPE_ENCOUNTERS \
     SOURCE_TABLE=pipeline_classify_p_p516_daily \
     RAW_TABLE=world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_ \
+    ENCOUNTERS_START_DATE=$(date --date="7 days ago" +"%Y-%m-%d") \
     SINK_TABLE=world-fishing-827:machine_learning_dev_ttl_30d.encounters_ \
     GCS_BUCKET=machine-learning-dev-ttl-30d/encounters
 
