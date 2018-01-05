@@ -168,5 +168,5 @@ def build_dag(dag_id, schedule_interval):
         return dag
 
 port_events_daily_dag = build_dag('encounters_daily_v0_14', '@daily')
-port_events_monthly_dag = build_dag('encounterss_monthly_v0_14', '@monthly')
+port_events_monthly_dag = build_dag('encounters_monthly_v0_14', '@monthly')
 
