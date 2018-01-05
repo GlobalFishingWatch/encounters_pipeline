@@ -38,16 +38,24 @@ SINK_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SINK_TABLE }}'
 TODAY_TABLE='{{ ds_nodash }}' 
 YESTERDAY_TABLE='{{ yesterday_ds_nodash }}'
 
+FIRST_DAY_OF_MONTH = '{{ execution_date.replace(day=1).strftime("%Y-%m-%d") }}'
+LAST_DAY_OF_MONTH = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y-%m-%d") }}'
+LAST_DAY_OF_MONTH_NODASH = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y%m%d") }}'
+
 
 BUCKET='{{ var.json.PIPE_ENCOUNTERS.GCS_BUCKET }}'
 GCS_TEMP_DIR='gs://%s/dataflow-temp' % BUCKET
 GCS_STAGING_DIR='gs://%s/dataflow-staging' % BUCKET
 
 
+processing_start_date_string = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
+processing_start_date = datetime.strptime(processing_start_date_string, "%Y-%m-%d")
+
+
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2017, 8, 1),
+    'start_date': processing_start_date,
     'email': ['tim@globalfishingwatch.org'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -82,66 +90,83 @@ def table_sensor(task_id, table_id, dataset_id, dag, **kwargs):
     )
 
 
-with DAG('pipe_encounters_v0_13',  schedule_interval=timedelta(days=1), max_active_runs=3, default_args=default_args) as dag:
+def build_dag(dag_id, schedule_interval):
 
-    yesterday_exists = table_sensor(task_id='yesterday_exists', dataset_id=SOURCE_TABLE,
-                                table_id=YESTERDAY_TABLE, dag=dag)
-
-    today_exists = table_sensor(task_id='today_exists', dataset_id=SOURCE_TABLE,
-                                table_id=TODAY_TABLE, dag=dag)
-
-    python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
-
-    logging.info("target: %s", python_target)
-
-    # Note: task_id must use '-' instead of '_' because it gets used to create the dataflow job name, and
-    # only '-' is allowed
-    create_raw_encounters = TemplatedDataFlowPythonOperator(
-        task_id='create-raw-encounters',
-        py_file=python_target,
-        options={
-            'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
-                                         'pipe_encounters/create-raw-encounters.log'),
-            'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }} '
-                       'python -m pipeline.create_raw_encounters',
-            'project': PROJECT_ID,
-            'start_date': '{{ ds }}',
-            'end_date': '{{ ds }}',
-            'source_table': SOURCE_TABLE_WITH_SUFFIX,
-            'raw_table': RAW_TABLE,
-            'staging_location': GCS_STAGING_DIR,
-            'temp_location': GCS_TEMP_DIR,
-            'max_num_workers': '100',
-            'disk_size_gb': '50',
-            'setup_file': './setup.py',
-            'requirements_file': 'requirements.txt',
-        },
-        dag=dag
-    )
+    if schedule_interval=='@daily':
+        source_sensor_date = '{{ ds_nodash }}'
+        start_date = '{{ ds }}'
+        end_date = '{{ ds }}'
+    elif schedule_interval == '@monthly':
+        source_sensor_date = LAST_DAY_OF_MONTH_NODASH
+        start_date = FIRST_DAY_OF_MONTH
+        end_date = LAST_DAY_OF_MONTH
+    else:
+        raise ValueError('Unsupported schedule interval {}'.format(schedule_interval))
 
 
-    merge_encounters = TemplatedDataFlowPythonOperator(
-        task_id='merge-encounters',
-        py_file=python_target,
-        options={
-            'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
-                                         'pipe_encounters/merge-encounters.log'),
-            'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }} '
-                       'python -m pipeline.merge_encounters',
-            'project': PROJECT_ID,
-            'start_date': '{{ ds }}',
-            'end_date': '{{ ds }}',
-            'raw_table': RAW_TABLE,
-            'sink': SINK_TABLE,
-            'staging_location': GCS_STAGING_DIR,
-            'temp_location': GCS_TEMP_DIR,
-            'max_num_workers': '100',
-            'disk_size_gb': '50',
-            'setup_file': './setup.py',
-            'requirements_file': 'requirements.txt',
-        },
-        dag=dag
-    )
+    with DAG(dag_id,  schedule_interval, default_args=default_args) as dag:
 
-    yesterday_exists >> today_exists >> create_raw_encounters >> merge_encounters
+        source_exists = table_sensor(task_id='source_exists', dataset_id=SOURCE_TABLE,
+                                    table_id=source_sensor_date, dag=dag)
+
+        python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
+
+        logging.info("target: %s", python_target)
+
+        # Note: task_id must use '-' instead of '_' because it gets used to create the dataflow job name, and
+        # only '-' is allowed
+        create_raw_encounters = TemplatedDataFlowPythonOperator(
+            task_id='create-raw-encounters',
+            depends_on_past=True,
+            py_file=python_target,
+            options={
+                'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
+                                             'pipe_encounters/create-raw-encounters.log'),
+                'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }} '
+                           'python -m pipeline.create_raw_encounters',
+                'project': PROJECT_ID,
+                'start_date': start_date,
+                'end_date': end_date,
+                'source_table': SOURCE_TABLE_WITH_SUFFIX,
+                'raw_table': RAW_TABLE,
+                'staging_location': GCS_STAGING_DIR,
+                'temp_location': GCS_TEMP_DIR,
+                'max_num_workers': '100',
+                'disk_size_gb': '50',
+                'setup_file': './setup.py',
+                'requirements_file': 'requirements.txt',
+            },
+            dag=dag
+        )
+
+
+        merge_encounters = TemplatedDataFlowPythonOperator(
+            task_id='merge-encounters',
+            py_file=python_target,
+            options={
+                'startup_log_file': pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'), 
+                                             'pipe_encounters/merge-encounters.log'),
+                'command': '{{ var.value.DOCKER_RUN }} {{ var.json.PIPE_ENCOUNTERS.DOCKER_IMAGE }} '
+                           'python -m pipeline.merge_encounters',
+                'project': PROJECT_ID,
+                'start_date': processing_start_date_string, # Run merge from first date processed
+                'end_date': end_date,
+                'raw_table': RAW_TABLE,
+                'sink': SINK_TABLE,
+                'staging_location': GCS_STAGING_DIR,
+                'temp_location': GCS_TEMP_DIR,
+                'max_num_workers': '100',
+                'disk_size_gb': '50',
+                'setup_file': './setup.py',
+                'requirements_file': 'requirements.txt',
+            },
+            dag=dag
+        )
+
+        source_exists >> create_raw_encounters >> merge_encounters
+
+        return dag
+
+port_events_daily_dag = build_dag('encounters_daily_v0_14', '@daily')
+port_events_monthly_dag = build_dag('encounters_monthly_v0_14', '@monthly')
 

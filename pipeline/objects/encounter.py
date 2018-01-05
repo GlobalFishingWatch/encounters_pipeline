@@ -13,4 +13,4 @@ class EncounterCoder(NamedtupleCoder):
     time_fields = ['start_time', 'end_time']
 
 
-EncountersFromTuples, EncountersFromDicts, EncountersToDicts = EncounterCoder.register()
+EncounterCoder.register()

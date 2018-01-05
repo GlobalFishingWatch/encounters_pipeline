@@ -11,6 +11,6 @@ class ResampledRecordCoder(NamedtupleCoder):
     time_fields = ['timestamp']
 
 
-ResampledRecordsFromTuples, ResampledRecordsFromDicts, ResampledResampledRecordsToDicts = ResampledRecordCoder.register()
+ResampledRecordCoder.register()
 
   

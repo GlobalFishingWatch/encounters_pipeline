@@ -12,5 +12,5 @@ class AnnotatedRecordCoder(NamedtupleCoder):
     time_fields = ['timestamp']
 
 
-AnnotatedRecordsFromTuples, AnnotatedRecordsFromDicts, AnnotatedRecordsToDicts = AnnotatedRecordCoder.register()
+AnnotatedRecordCoder.register()
 

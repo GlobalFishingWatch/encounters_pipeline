@@ -1,11 +1,13 @@
+import datetime
 import logging
+import pytz
+from apache_beam import Flatten
 from apache_beam import io
 from apache_beam import Pipeline
 from apache_beam.runners import PipelineState
-from pipeline.objects.encounter import EncountersFromDicts
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.filter_ports import FilterPorts
-from pipeline.objects.encounter import EncountersToDicts
+from pipeline.objects.encounter import Encounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.writers import WriteToBq
 
@@ -29,31 +31,30 @@ def run(options):
         write_disposition="WRITE_TRUNCATE",
     )
 
-    query = """SELECT
-        vessel_1_id, vessel_2_id, 
-        FLOAT(TIMESTAMP_TO_MSEC(start_time)) / 1000  AS start_time,
-        FLOAT(TIMESTAMP_TO_MSEC(end_time)) / 1000    AS end_time,
-        mean_latitude, mean_longitude, 
-        median_distance_km, median_speed_knots, 
-        vessel_1_point_count, vessel_2_point_count
-           FROM [{}]
-    """.format(merge_options.raw_table)
 
-    merged = (p
-        | io.Read(io.gcp.bigquery.BigQuerySource(query=query))
-        | EncountersFromDicts()
+    start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
+    end_date= datetime.datetime.strptime(merge_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
+
+    queries = Encounter.create_queries(merge_options.raw_table, start_date, end_date)
+
+    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x)))
+                    for (i, x) in enumerate(queries)]
+
+    merged = (sources
+        | Flatten()
+        | Encounter.FromDict()
         | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
     )
 
     if writer_merged is not None:
         (merged 
-            | "MergedToDicts" >> EncountersToDicts()
+            | "MergedToDicts" >> Encounter.ToDict()
             | "WriteMerged" >> writer_merged
         )
 
     (merged
         | FilterPorts()
-        | "FilteredToDicts" >> EncountersToDicts()
+        | "FilteredToDicts" >> Encounter.ToDict()
         | "WriteFiltered" >> writer_filtered
     )
 
