@@ -41,7 +41,7 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("{id_prefix}", STRING(mmsi)) AS id
+      CONCAT("{id_prefix}", STRING(ssvid)) AS id
     FROM
       TABLE_DATE_RANGE([world-fishing-827:{table}], 
                             TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
@@ -77,11 +77,6 @@ def run(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
-
-    # writer = WriteToBq(
-    #     table=create_options.raw_table,
-    #     write_disposition="WRITE_APPEND",
-    # )
     writer = WriteToBigQueryDatePartitioned(
                 temp_gcs_location=cloud_options.temp_location,
                 table=create_options.raw_table,
@@ -89,7 +84,6 @@ def run(options):
                 schema=output_build_schema(),
                 project=cloud_options.project
                 )
-
 
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x)))
                     for (i, x) in enumerate(create_queries(options))]
