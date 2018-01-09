@@ -28,7 +28,7 @@ from pipeline.transforms.writers import WriteToBq
 
 RESAMPLE_INCREMENT_MINUTES = 10.0
 MAX_GAP_HOURS = 1.0
-MAX_ENCOUNTER_DISTANCE_KM = 1.0
+MAX_ENCOUNTER_DISTANCE_KM = 0.5
 MIN_ENCOUNTER_TIME_MINUTES = 120.0
 PRECURSOR_DAYS = 1
 
@@ -114,7 +114,7 @@ def run(options):
     if create_options.neighbor_table:
         (adjacencies
             | CreateTimestampedAdjacencies(start_date, end_date)
-            | WriteToBigQueryDatePartitioned(
+            | "WriteNeighbors" >> WriteToBigQueryDatePartitioned(
                 temp_gcs_location=cloud_options.temp_location,
                 table=create_options.neighbor_table,
                 write_disposition="WRITE_TRUNCATE",
