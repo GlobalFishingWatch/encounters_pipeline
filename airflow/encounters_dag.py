@@ -19,30 +19,21 @@ class TemplatedDataFlowPythonOperator(DataFlowPythonOperator):
 GC_CONNECTION_ID = 'google_cloud_default' 
 BQ_CONNECTION_ID = 'google_cloud_default'
 
-PROJECT_ID='{{ var.value.GCP_PROJECT_ID }}'
+PROJECT_ID='{{ var.value.PROJECT_ID }}'
 
 DATASET_ID='{{ var.value.IDENT_DATASET }}'
 
 THIS_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DAG_FILES = THIS_SCRIPT_DIR
 
-# We do this since the raw code is designed to append the date
-# to random names, not necessarily after a dot. This upsets
-# table_sensor. 
-SOURCE_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}'
+config = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)
+config['ds_nodash'] = '{{ ds_nodash }}'
+config['first_day_of_month'] = '{{ execution_date.replace(day=1).strftime("%Y-%m-%d") }}'
+config['last_day_of_month'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y-%m-%d") }}'
+config['first_day_of_month_nodash'] = '{{ execution_date.replace(day=1).strftime("%Y%m%d") }}'
+config['last_day_of_month_nodash'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y%m%d") }}'
+config['temp_bucker'] = '{{ var.value.TEMP_BUCKET }}'
 
-RAW_TABLE = '{{ var.json.PIPE_ENCOUNTERS.RAW_TABLE }}'
-SINK_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SINK_TABLE }}'
-
-TODAY_TABLE='{{ ds_nodash }}' 
-YESTERDAY_TABLE='{{ yesterday_ds_nodash }}'
-
-FIRST_DAY_OF_MONTH = '{{ execution_date.replace(day=1).strftime("%Y-%m-%d") }}'
-LAST_DAY_OF_MONTH = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y-%m-%d") }}'
-LAST_DAY_OF_MONTH_NODASH = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y%m%d") }}'
-
-
-BUCKET='{{ var.json.PIPE_ENCOUNTERS.GCS_BUCKET }}'
 GCS_TEMP_DIR='gs://%s/dataflow-temp' % BUCKET
 GCS_STAGING_DIR='gs://%s/dataflow-staging' % BUCKET
 
@@ -96,17 +87,16 @@ def build_dag(dag_id, schedule_interval):
         start_date = '{{ ds }}'
         end_date = '{{ ds }}'
     elif schedule_interval == '@monthly':
-        source_sensor_date = LAST_DAY_OF_MONTH_NODASH
-        start_date = FIRST_DAY_OF_MONTH
-        end_date = LAST_DAY_OF_MONTH
+        source_sensor_date = config['last_day_of_month_nodash']
+        start_date = config['first_day_of_month']
+        end_date = config['last_day_of_month']
     else:
         raise ValueError('Unsupported schedule interval {}'.format(schedule_interval))
 
 
     with DAG(dag_id,  schedule_interval, default_args=default_args) as dag:
 
-        dataset_id, table_prefix = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)[
-            'SOURCE_TABLE'].split('.')
+        dataset_id, table_prefix = config['SOURCE_TABLE'].split('.')
         table_id = '%s{{ ds_nodash }}' % table_prefix
 
         source_exists = table_sensor(task_id='source_exists', dataset_id=dataset_id,
@@ -130,9 +120,9 @@ def build_dag(dag_id, schedule_interval):
                 'project': PROJECT_ID,
                 'start_date': start_date,
                 'end_date': end_date,
-                'source_table': SOURCE_TABLE,
-                'raw_table': RAW_TABLE,
-                'staging_location': GCS_STAGING_DIR,
+                'source_table': config['SOURCE_TABLE'],
+                'raw_table': config['RAW_TABLE'],
+                'staging_location': 'gs://{temp_bucket}/dataflow_staging'.format(**config),
                 'temp_location': GCS_TEMP_DIR,
                 'max_num_workers': '100',
                 'disk_size_gb': '50',
@@ -154,9 +144,9 @@ def build_dag(dag_id, schedule_interval):
                 'project': PROJECT_ID,
                 'start_date': processing_start_date_string, # Run merge from first date processed
                 'end_date': end_date,
-                'raw_table': RAW_TABLE,
-                'sink': SINK_TABLE,
-                'staging_location': GCS_STAGING_DIR,
+                'raw_table': config['RAW_TABLE'],
+                'sink': config['SINK_TABLE'],
+                'staging_location': 'gs://{temp_bucket}/dataflow_staging'.format(**config),
                 'temp_location': GCS_TEMP_DIR,
                 'max_num_workers': '100',
                 'disk_size_gb': '50',
