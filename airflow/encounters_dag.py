@@ -32,13 +32,10 @@ config['first_day_of_month'] = '{{ execution_date.replace(day=1).strftime("%Y-%m
 config['last_day_of_month'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y-%m-%d") }}'
 config['first_day_of_month_nodash'] = '{{ execution_date.replace(day=1).strftime("%Y%m%d") }}'
 config['last_day_of_month_nodash'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y%m%d") }}'
-config['temp_bucker'] = '{{ var.value.TEMP_BUCKET }}'
-
-GCS_TEMP_DIR='gs://%s/dataflow-temp' % BUCKET
-GCS_STAGING_DIR='gs://%s/dataflow-staging' % BUCKET
+config['temp_bucket'] = '{{ var.value.TEMP_BUCKET }}'
 
 
-processing_start_date_string = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)['ENCOUNTERS_START_DATE'].strip()
+processing_start_date_string = config['ENCOUNTERS_START_DATE'].strip()
 processing_start_date = datetime.strptime(processing_start_date_string, "%Y-%m-%d")
 
 
@@ -123,7 +120,7 @@ def build_dag(dag_id, schedule_interval):
                 'source_table': config['SOURCE_TABLE'],
                 'raw_table': config['RAW_TABLE'],
                 'staging_location': 'gs://{temp_bucket}/dataflow_staging'.format(**config),
-                'temp_location': GCS_TEMP_DIR,
+                'temp_location': 'gs://{temp_bucket}/dataflow-temp'.format(**config),
                 'max_num_workers': '100',
                 'disk_size_gb': '50',
                 'setup_file': './setup.py',
@@ -146,8 +143,8 @@ def build_dag(dag_id, schedule_interval):
                 'end_date': end_date,
                 'raw_table': config['RAW_TABLE'],
                 'sink': config['SINK_TABLE'],
-                'staging_location': 'gs://{temp_bucket}/dataflow_staging'.format(**config),
-                'temp_location': GCS_TEMP_DIR,
+                'staging_location': 'gs://{temp_bucket}/dataflow-staging'.format(**config),
+                'temp_location': 'gs://{temp_bucket}/dataflow-temp'.format(**config),
                 'max_num_workers': '100',
                 'disk_size_gb': '50',
                 'setup_file': './setup.py',
