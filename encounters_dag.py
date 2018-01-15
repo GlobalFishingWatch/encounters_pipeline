@@ -30,7 +30,6 @@ DAG_FILES = THIS_SCRIPT_DIR
 # to random names, not necessarily after a dot. This upsets
 # table_sensor. 
 SOURCE_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}'
-SOURCE_TABLE_WITH_SUFFIX = '{{ var.json.PIPE_ENCOUNTERS.SOURCE_TABLE }}.'
 
 RAW_TABLE = '{{ var.json.PIPE_ENCOUNTERS.RAW_TABLE }}'
 SINK_TABLE = '{{ var.json.PIPE_ENCOUNTERS.SINK_TABLE }}'
@@ -106,8 +105,12 @@ def build_dag(dag_id, schedule_interval):
 
     with DAG(dag_id,  schedule_interval, default_args=default_args) as dag:
 
-        source_exists = table_sensor(task_id='source_exists', dataset_id=SOURCE_TABLE,
-                                    table_id=source_sensor_date, dag=dag)
+        dataset_id, table_prefix = Variable.get('PIPE_ENCOUNTERS', deserialize_json=True)[
+            'SOURCE_TABLE'].split('.')
+        table_id = '%s{{ ds_nodash }}' % table_prefix
+
+        source_exists = table_sensor(task_id='source_exists', dataset_id=dataset_id,
+                                    table_id=table_id, dag=dag)
 
         python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
 
@@ -127,7 +130,7 @@ def build_dag(dag_id, schedule_interval):
                 'project': PROJECT_ID,
                 'start_date': start_date,
                 'end_date': end_date,
-                'source_table': SOURCE_TABLE_WITH_SUFFIX,
+                'source_table': SOURCE_TABLE,
                 'raw_table': RAW_TABLE,
                 'staging_location': GCS_STAGING_DIR,
                 'temp_location': GCS_TEMP_DIR,
