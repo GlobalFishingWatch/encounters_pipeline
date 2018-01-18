@@ -115,37 +115,3 @@ class SimpleMask(BaseMask):
         return self.mask[i, j]
 
 
-
-
-def test(sparse_path, dense_path, threshold=0.5, invert=False):
-    import numpy as np
-    dense_mask = SimpleMask(dense_path, threshold, invert)
-    sparse_mask = Mask(sparse_path)
-
-    n = 100000
-    results = []
-    latlon = []
-    for i in range(n):
-        lat = np.random.uniform(dense_mask.MIN_LAT, dense_mask.MAX_LAT)
-        lon = np.random.uniform(dense_mask.MIN_LON, dense_mask.MAX_LON)
-        dense_result = dense_mask.query((lat, lon))
-        sparse_result = sparse_mask.query((lat, lon))
-        assert dense_result == sparse_result, (lat, lon, dense_result, sparse_result, i)
-        results.append(dense_result)
-        latlon.append((lat, lon))
-
-    print("Average amount of land (by degrees)", np.mean(results))
-
-    t0 = time.clock()
-    for (lat, lon) in latlon:
-        dense_result = dense_mask.query((lat, lon))
-    d1 = time.clock() - t0
-    print("Dense", d1, "seconds")
-
-    t0 = time.clock()
-    for (lat, lon) in latlon:
-        dense_result = sparse_mask.query((lat, lon))
-    d2 = time.clock() - t0
-    print("Sparse", d2, "seconds")
-    print("Time Ratio", d2 / d1)
-
