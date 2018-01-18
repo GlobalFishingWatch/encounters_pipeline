@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 python $AIRFLOW_HOME/utils/set_default_variables.py \
     --force docker_image=$1 \
     pipe_encounters \

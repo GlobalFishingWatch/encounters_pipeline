@@ -2,8 +2,8 @@ import codecs
 from setuptools import setup, find_packages
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '0.1.0'
-PROJECT_DESCRIPTION = 'Apache Beam pipeline for compute vessel encounters.'
+PROJECT_VERSION = '0.1.15'
+PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
     "ujson",
     "statistics",
