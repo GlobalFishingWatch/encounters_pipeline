@@ -15,8 +15,7 @@ class FilterInland(PTransform):
     def __init__(self):
         self.mask = Mask(os.path.join(parent_dir, "data/sparse_inland.pickle"))
 
-    def not_near_port(self, msg):
-        # TODO: also filter incoming messages
+    def not_inland(self, msg):
         if (-90 <= msg.mean_latitude <= 90) and (-180 <= msg.mean_longitude <= 180):
             return not self.mask.query(msg.mean_latitude, msg.mean_longitude) 
         return False
@@ -24,5 +23,5 @@ class FilterInland(PTransform):
     def expand(self, xs):
         return (
             xs
-            | Filter(self.not_near_port)
+            | Filter(self.not_inland)
         )
