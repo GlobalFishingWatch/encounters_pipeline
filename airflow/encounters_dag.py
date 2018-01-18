@@ -155,6 +155,7 @@ def build_dag(dag_id, schedule_interval):
                 end_date=end_date,
                 raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
                 sink='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
+                temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
                 staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
                 max_num_workers="100",
                 disk_size_gb="50",
