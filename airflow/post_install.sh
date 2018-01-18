@@ -1,10 +1,16 @@
 python $AIRFLOW_HOME/utils/set_default_variables.py \
-    --force DOCKER_IMAGE=$1 \
-    PIPE_ENCOUNTERS \
-    ENCOUNTERS_START_DATE=$(date --date="7 days ago" +"%Y-%m-%d") \
-    SOURCE_TABLE="{{ PIPELINE_DATASET }}.position_messages_" \
-    RAW_TABLE="{{ GCP_PROJECT_ID }}:{{ PIPELINE_DATASET }}.raw_encounters_" \
-    SINK_TABLE="{{ GCP_PROJECT_ID }}:{{ PIPELINE_DATASET }}.encounters_" \
+    --force docker_image=$1 \
+    pipe_encounters \
+    docker_run="{{ var.value.DOCKER_RUN }}" \
+    project_id="{{ var.value.PROJECT_ID }}" \
+    temp_bucket="{{ var.value.TEMP_BUCKET }}"  \
+    pipeline_bucket="{{ var.value.PIPELINE_BUCKET }}" \
+    pipeline_dataset="{{ var.value.PIPELINE_DATASET }}" \
+    encounters_start_date=$(date --date="7 days ago" +"%Y-%m-%d") \
+    source_dataset="{{ var.value.PIPELINE_DATASET }}" \
+    source_table="position_messages_" \
+    raw_table="raw_encounters_" \
+    encounters_table="encounters_" \
 
 echo "Installation Complete"
 
