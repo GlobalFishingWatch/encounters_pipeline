@@ -93,7 +93,7 @@ def build_dag(dag_id, schedule_interval):
                                              'pipe_encounters/create-raw-encounters.log'),
                 command='{docker_run} {docker_image} create_raw_encounters'.format(**config),
                 project=config['project_id'],
-                start_date=processing_start_date,
+                start_date=start_date,
                 end_date=end_date,
                 source_table='{project_id}:{source_dataset}.{source_table}'.format(**config),
                 raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
