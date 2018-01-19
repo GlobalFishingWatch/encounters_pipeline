@@ -72,7 +72,7 @@ def build_dag(dag_id, schedule_interval):
         raise ValueError('Unsupported schedule interval {}'.format(schedule_interval))
 
 
-    with DAG(dag_id,  schedule_interval, default_args=default_args) as dag:
+    with DAG(dag_id,  schedule_interval=schedule_interval, default_args=default_args) as dag:
 
         source_exists = table_sensor(
             dataset_id='{source_dataset}'.format(**config),
@@ -114,7 +114,7 @@ raw_encounters_daily_dag = build_dag('encounters_daily', '@daily')
 raw_encounters_monthly_dag = build_dag('encounters_monthly', '@monthly')
 
 
-with DAG('encounters_merge', '@daily', default_args=default_args) as merge_encounters_dag:
+with DAG('encounters_merge', schedule_interval='@daily', default_args=default_args) as merge_encounters_dag:
     merge_encounters = DataFlowPythonOperator(
         task_id='merge-encounters',
         pool='dataflow',
