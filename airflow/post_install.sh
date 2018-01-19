@@ -12,7 +12,7 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
     source_table="position_messages_" \
     raw_table="raw_encounters_" \
-    encounters_table="encounters_" \
+    encounters_table="encounters" \
 
 echo "Installation Complete"
 
