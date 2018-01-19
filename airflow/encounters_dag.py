@@ -97,6 +97,7 @@ def build_dag(dag_id, schedule_interval):
                 end_date=end_date,
                 source_table='{project_id}:{source_dataset}.{source_table}'.format(**config),
                 raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
+                neighbor_table='{project_id}:{pipeline_dataset}.{neighbor_table}'.format(**config),
                 temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
                 staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
                 max_num_workers="100",
