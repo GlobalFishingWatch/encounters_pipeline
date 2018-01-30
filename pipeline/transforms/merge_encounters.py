@@ -29,17 +29,17 @@ class MergeEncounters(PTransform):
             return (id_2, id_1), encounter
 
     def encounter_from_records(self, id_1, id_2, records):
-        # n_points are the points that correspond to the means in the records
-        n_points = max(sum(env.vessel_1_point_count for (env, p1, p2) in records), 1)
+        total_seconds = max(sum((env.end_time - env.start_time).total_seconds() 
+                                    for (env, p1, p2) in records), 1)
         return Encounter(
             vessel_1_id = id_1,
             vessel_2_id = id_2,
             start_time = min(env.start_time for (env, p1, p2) in records),
             end_time = max(env.end_time for (env, p1, p2) in records),
-            mean_latitude = sum(env.vessel_1_point_count * env.mean_latitude 
-                            for (env, p1, p2) in records) / n_points,
-            mean_longitude = sum(env.vessel_1_point_count * env.mean_longitude
-                            for (env, p1, p2) in records) / n_points,
+            mean_latitude = sum((env.end_time - env.start_time).total_seconds() * env.mean_latitude 
+                            for (env, p1, p2) in records) / total_seconds,
+            mean_longitude = sum((env.end_time - env.start_time).total_seconds() * env.mean_longitude
+                            for (env, p1, p2) in records) / total_seconds,
             # NOTE: this is the median of medians, not the true median
             # TODO: discuss with Nate
             median_speed_knots = median(env.median_speed_knots for (env, p1, p2) in records),
