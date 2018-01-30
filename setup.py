@@ -1,13 +1,15 @@
+import codecs
 from setuptools import setup, find_packages
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '0.1.0'
-PROJECT_DESCRIPTION = 'Apache Beam pipeline for compute vessel encounters.'
+PROJECT_VERSION = '0.1.16'
+PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
     "ujson",
     "statistics",
     "more_itertools",
-    "s2sphere"
+    "s2sphere",
+    "pipe-tools==0.1.3"
 ]
 
 # Frozen dependencies for the google cloud dataflow dependency
@@ -54,6 +56,9 @@ DATAFLOW_PINNED_DEPENDENCIES = [
     "urllib3==1.22",
 ]
 
+with codecs.open('requirements.txt', encoding='utf-8') as f:
+    DEPENDENCY_LINKS=[line for line in f]
+
 setup(
     name=PROJECT_NAME,
     version=PROJECT_VERSION,
@@ -62,7 +67,7 @@ setup(
     author_email="info@globalfishingwatch.org",
     license="Apache 2",
     packages=find_packages(),
+    include_package_data=True,
     install_requires=DEPENDENCIES + DATAFLOW_PINNED_DEPENDENCIES,
-    package_data={
-        'pipeline': ['pipeline/*.pickle']},
+    dependency_links=DEPENDENCY_LINKS
 )
