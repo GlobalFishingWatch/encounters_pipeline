@@ -22,7 +22,7 @@ class CreateTimestampedAdjacencies(PTransform):
 
     def expand(self, xs):
         return (xs
-            | Filter(lambda x: self.start_date <= x.timestamp <= self.end_date)
+            | Filter(lambda x: self.start_date.date() <= x.timestamp.date() <= self.end_date.date())
             | Map(self.extract_nbr_dict)
             | Map(lambda x: TimestampedValue(x, x['timestamp']))
         )

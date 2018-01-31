@@ -73,11 +73,10 @@ Here is a concrete example:
 
 
         docker-compose run create_raw_encounters \
-                --source_table pipeline_classify_p_p516_daily. \
-                --start_date 2012-01-01 \
-                --end_date 2018-01-05 \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_05km_ \
-                --neighbor_table world-fishing-827:machine_learning_dev_ttl_30d.vessel_neighbors_ \
+                --source_table pipe_staging_a.position_messages_ \
+                --start_date 2017-01-01 \
+                --end_date 2017-12-31 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-create-test \
@@ -89,10 +88,10 @@ Here is a concrete example:
 
 
         docker-compose run merge_encounters \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_ \
-                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_05km \
-                --start_date 2012-01-01 \
-                --end_date 2018-01-05 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_uvi_05km \
+                --start_date 2017-01-01 \
+                --end_date 2017-12-31 \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-merge-test \

@@ -7,11 +7,10 @@ from apache_beam import Pipeline
 from apache_beam.runners import PipelineState
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.filter_ports import FilterPorts
+from pipeline.transforms.filter_inland import FilterInland
 from pipeline.objects.encounter import Encounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.writers import WriteToBq
-
-
 
 def run(options):
 
@@ -54,6 +53,7 @@ def run(options):
 
     (merged
         | FilterPorts()
+        | FilterInland()
         | "FilteredToDicts" >> Encounter.ToDict()
         | "WriteFiltered" >> writer_filtered
     )

@@ -153,10 +153,11 @@ class TestComputeEncounters(unittest.TestCase):
                   ('vessel_2_id', '563418000')])] 
 
 
+
     def _get_merged_expected(self):
         return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
-                 1426750800.0, 'mean_longitude': 38.53443222934882, 
-                 'vessel_2_point_count': 10, 'mean_latitude': -27.47972318637202, 
+                 1426750800.0, 'mean_longitude': 38.53406239538655, 
+                 'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
                  'median_distance_km': 0.029597875050467033, 'vessel_1_point_count': 12, 
                  'vessel_2_id': '563418000', 'vessel_1_id': '441910000'}]

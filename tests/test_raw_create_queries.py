@@ -19,7 +19,7 @@ def test_create_queries_1():
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("", STRING(ssvid)) AS id
+      CONCAT("", vessel_id) AS id
     FROM
       TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
                             TIMESTAMP('2015-12-31'), TIMESTAMP('2016-01-01'))
@@ -37,7 +37,7 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("", STRING(ssvid)) AS id
+      CONCAT("", vessel_id) AS id
     FROM
       TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
                             TIMESTAMP('2012-04-30'), TIMESTAMP('2015-01-24'))
@@ -53,7 +53,7 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("", STRING(ssvid)) AS id
+      CONCAT("", vessel_id) AS id
     FROM
       TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
                             TIMESTAMP('2015-01-25'), TIMESTAMP('2017-05-15'))

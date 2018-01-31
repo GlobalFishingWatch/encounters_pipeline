@@ -41,7 +41,7 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("{id_prefix}", STRING(ssvid)) AS id
+      CONCAT("{id_prefix}", vessel_id) AS id
     FROM
       TABLE_DATE_RANGE([world-fishing-827:{table}], 
                             TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
