@@ -109,33 +109,33 @@ def build_dag(dag_id, schedule_interval):
 
         dag >> source_exists >> create_raw_encounters
 
+        if schedule_interval == '@daily':
+            merge_encounters = DataFlowPythonOperator(
+                task_id='merge-encounters',
+                pool='dataflow',
+                py_file=python_target,
+                options=dict(
+                    startup_log_file=pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'),
+                                             'pipe_encounters/merge-encounters.log'),
+                    command='{docker_run} {docker_image} merge_encounters'.format(**config),
+                    project=config['project_id'],
+                    start_date=processing_start_date_string,
+                    end_date='{{ ds }}',
+                    raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
+                    sink='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
+                    temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
+                    staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
+                    max_num_workers="100",
+                    disk_size_gb="50",
+                    requirements_file='./requirements.txt',
+                    setup_file='./setup.py'
+                )
+            )
+
+            create_raw_encounters >> merge_encounters
+
         return dag
 
 raw_encounters_daily_dag = build_dag('encounters_daily', '@daily')
 raw_encounters_monthly_dag = build_dag('encounters_monthly', '@monthly')
 
-
-with DAG('encounters_merge', schedule_interval='@daily', default_args=default_args) as merge_encounters_dag:
-    merge_encounters = DataFlowPythonOperator(
-        task_id='merge-encounters',
-        pool='dataflow',
-        py_file=python_target,
-        options=dict(
-            startup_log_file=pp.join(Variable.get('DATAFLOW_WRAPPER_LOG_PATH'),
-                                     'pipe_encounters/merge-encounters.log'),
-            command='{docker_run} {docker_image} merge_encounters'.format(**config),
-            project=config['project_id'],
-            start_date=processing_start_date_string,
-            end_date='{{ ds }}',
-            raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
-            sink='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
-            temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
-            staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
-            max_num_workers="100",
-            disk_size_gb="50",
-            requirements_file='./requirements.txt',
-            setup_file='./setup.py'
-        )
-    )
-
-    merge_encounters_dag >> merge_encounters
