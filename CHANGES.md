@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.1.17 2018-02-05
+-----------------
+
+* [`#11`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/11)
+  Filter out inland encounters
+* [`#21`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/21)
+  Combine airflow create_raw_encounters with merge_encoutners for the daily run
+  
 0.1.16
 ------
 
