@@ -109,7 +109,7 @@ def build_dag(dag_id, schedule_interval):
 
         dag >> source_exists >> create_raw_encounters
 
-        if schedule_interval == '@daily':
+        if not config.get('backfill', False):
             merge_encounters = DataFlowPythonOperator(
                 task_id='merge-encounters',
                 pool='dataflow',
