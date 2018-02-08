@@ -21,7 +21,7 @@ def test_create_queries_1():
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
+      TABLE_DATE_RANGE([SOURCE_TABLE], 
                             TIMESTAMP('2015-12-31'), TIMESTAMP('2016-01-01'))
     WHERE
       lat   IS NOT NULL AND
@@ -39,7 +39,7 @@ def test_create_queries_2():
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
+      TABLE_DATE_RANGE([SOURCE_TABLE], 
                             TIMESTAMP('2012-04-30'), TIMESTAMP('2015-01-24'))
     WHERE
       lat   IS NOT NULL AND
@@ -55,7 +55,7 @@ def test_create_queries_2():
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([world-fishing-827:SOURCE_TABLE], 
+      TABLE_DATE_RANGE([SOURCE_TABLE], 
                             TIMESTAMP('2015-01-25'), TIMESTAMP('2017-05-15'))
     WHERE
       lat   IS NOT NULL AND
