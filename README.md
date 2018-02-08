@@ -102,12 +102,12 @@ Here is a concrete example:
                 --disk_size_gb 100
 
 
-It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX:`, which will
+It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX::`, which will
 be prepended to ids from that source. For example:
 
         docker-compose run pipeline \
-                --source_table ais:pipeline_classify_p_p516_daily. \
-                --source_table peru_vms:pipeline_p_p588_peru.classify_ \
+                --source_table ais::pipeline_classify_p_p516_daily. \
+                --source_table peru_vms::pipeline_p_p588_peru.classify_ \
                 --start_date 2015-01-01 \
                 --end_date 2015-01-01 \
                 --raw_sink_table world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \
