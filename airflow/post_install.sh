@@ -13,7 +13,8 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     source_table="position_messages_" \
     raw_table="raw_encounters_" \
     encounters_table="encounters" \
-    neighbor_table="raw_encounters_neighbors_"
+    neighbor_table="raw_encounters_neighbors_" \
+    backfill=""
 
 echo "Installation Complete"
 
