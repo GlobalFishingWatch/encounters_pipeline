@@ -3,6 +3,7 @@ import logging
 import pytz
 
 from apache_beam import io
+from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
@@ -43,7 +44,7 @@ def create_queries(options):
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
       CONCAT("{id_prefix}", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([world-fishing-827:{table}], 
+      TABLE_DATE_RANGE([{table}], 
                             TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
     WHERE
       lat   IS NOT NULL AND
@@ -54,8 +55,8 @@ def create_queries(options):
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d') 
     for table in create_options.source_tables:
-        if ':' in table:
-            id_prefix, table = table.split(':', 1)
+        if '::' in table:
+            id_prefix, table = table.split('::', 1)
             id_prefix += ':'
         else:
             id_prefix = ''
@@ -85,7 +86,7 @@ def run(options):
                 project=cloud_options.project
                 )
 
-    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x)))
+    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project)))
                     for (i, x) in enumerate(create_queries(options))]
 
 
@@ -100,6 +101,7 @@ def run(options):
     (adjacencies
         | ComputeEncounters(max_km_for_encounter=MAX_ENCOUNTER_DISTANCE_KM, 
                             min_minutes_for_encounter=MIN_ENCOUNTER_TIME_MINUTES) 
+        | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | Encounter.ToDict()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | writer
