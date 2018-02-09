@@ -1,6 +1,14 @@
 Changes
 =======
 
+0.1.18 2018-02-08
+-----------------
+
+* [`#23`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/23)
+  Filter encounters output to the specified date rage
+* [`#25`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/25)
+  Added a backfill flag to disable running the encounters_merge dag task when backfilling
+
 0.1.17 2018-02-05
 -----------------
 
