@@ -3,6 +3,8 @@
 python $AIRFLOW_HOME/utils/set_default_variables.py \
     --force docker_image=$1 \
     pipe_encounters \
+    max_encounter_dist_km=0.5 \
+    min_encounter_time_minutes=120 \
     docker_run="{{ var.value.DOCKER_RUN }}" \
     project_id="{{ var.value.PROJECT_ID }}" \
     temp_bucket="{{ var.value.TEMP_BUCKET }}"  \

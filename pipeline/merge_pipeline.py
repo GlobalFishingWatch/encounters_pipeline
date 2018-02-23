@@ -1,6 +1,7 @@
 import datetime
 import logging
 import pytz
+from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import io
 from apache_beam import Pipeline
@@ -39,9 +40,17 @@ def run(options):
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x)))
                     for (i, x) in enumerate(queries)]
 
-    merged = (sources
+    raw_encounters = (sources
         | Flatten()
         | Encounter.FromDict()
+    )
+
+    if options.min_encounter_time_minutes is not None:
+        raw_encounters = (raw_encounters
+            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > options.min_encounter_time_minutes)
+        )
+
+    merged  = (raw_encounters
         | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
     )
 

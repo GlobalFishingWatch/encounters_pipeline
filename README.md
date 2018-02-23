@@ -47,6 +47,8 @@ In incremental mode, the form of the command is
                 --source_table SOURCE_TABLE \
                 --start_date DATE \
                 --end_date DATE \
+                --max_encounter_dist_km DISTANCE \
+                --min_encounter_time_minutes TIME \
                 --raw_sink RAW_TABLE \
                 --sink FINAL_TABLE \
                 remote \
@@ -62,6 +64,8 @@ Here is a concrete example:
                 --source_table pipeline_classify_p_p516_daily. \
                 --start_date 2017-01-01 \
                 --end_date 2017-01-01 \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 120 \
                 --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
                 --sink world-fishing-827:machine_learning_dev_ttl_30d.encounters_test \
                 remote \
@@ -76,6 +80,8 @@ Here is a concrete example:
                 --source_table pipe_staging_a.position_messages_ \
                 --start_date 2017-01-01 \
                 --end_date 2017-12-31 \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 120 \
                 --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
@@ -90,6 +96,8 @@ Here is a concrete example:
         docker-compose run merge_encounters \
                 --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
                 --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_uvi_05km \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 120 \
                 --start_date 2017-01-01 \
                 --end_date 2017-12-31 \
                 --project world-fishing-827 \
@@ -108,6 +116,8 @@ be prepended to ids from that source. For example:
         docker-compose run pipeline \
                 --source_table ais::pipeline_classify_p_p516_daily. \
                 --source_table peru_vms::pipeline_p_p588_peru.classify_ \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 120 \
                 --start_date 2015-01-01 \
                 --end_date 2015-01-01 \
                 --raw_sink_table world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \

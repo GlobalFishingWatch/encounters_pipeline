@@ -14,6 +14,8 @@ class MergeOptions(PipelineOptions):
                             help='Table to pull raw (unmerged) encounters to')
         required.add_argument('--sink_table', 
                             help='Table to write file, merged and filtered encounters to')
+        required.add_argument('--sink_table', 
+                            help='Table to write file, merged and filtered encounters to')      
         required.add_argument('--start_date', required=True, 
                               help="First date to merge.")
         required.add_argument('--end_date', required=True, 
@@ -23,4 +25,7 @@ class MergeOptions(PipelineOptions):
                             help='Table to write merged, but unfiltered encounters to')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
+        required.add_argument('--min_encounter_time_minutes', required=False, type=float,
+                            help="Minimum minutes of vessel adjacency before we have an encounter.\n"
+                                  "Does not have an effect if lower than value used in the create pipeline")
 

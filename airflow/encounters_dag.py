@@ -95,6 +95,8 @@ def build_dag(dag_id, schedule_interval):
                 project=config['project_id'],
                 start_date=start_date,
                 end_date=end_date,
+                max_encounter_dist_km=config['max_encounter_dist_km'],
+                min_encounter_time_minutes=config['min_encounter_time_minutes'],
                 source_table='{project_id}:{source_dataset}.{source_table}'.format(**config),
                 raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
                 neighbor_table='{project_id}:{pipeline_dataset}.{neighbor_table}'.format(**config),

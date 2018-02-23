@@ -29,8 +29,6 @@ from pipeline.transforms.writers import WriteToBq
 
 RESAMPLE_INCREMENT_MINUTES = 10.0
 MAX_GAP_HOURS = 1.0
-MAX_ENCOUNTER_DISTANCE_KM = 0.5
-MIN_ENCOUNTER_TIME_MINUTES = 120.0
 PRECURSOR_DAYS = 1
 
 
@@ -95,12 +93,12 @@ def run(options):
         | Record.FromDict()
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
-        | ComputeAdjacency(max_adjacency_distance_km=MAX_ENCOUNTER_DISTANCE_KM) 
+        | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
         )
 
     (adjacencies
-        | ComputeEncounters(max_km_for_encounter=MAX_ENCOUNTER_DISTANCE_KM, 
-                            min_minutes_for_encounter=MIN_ENCOUNTER_TIME_MINUTES) 
+        | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
+                            min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | Encounter.ToDict()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
