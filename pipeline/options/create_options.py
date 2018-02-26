@@ -32,3 +32,5 @@ class CreateOptions(PipelineOptions):
                             help='Wait for Dataflow to complete.')
         optional.add_argument('--neighbor_table', 
                             help='Table to write neighbor counts to')
+        optional.add_argument('--vessel_id_column', 
+                              help='value to use in query for extracting vessel_id')

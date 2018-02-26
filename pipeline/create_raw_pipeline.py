@@ -40,7 +40,7 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("{id_prefix}", vessel_id) AS id
+      CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
       TABLE_DATE_RANGE([{table}], 
                             TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
@@ -52,6 +52,9 @@ def create_queries(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d') 
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d') 
+
+    vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
+
     for table in create_options.source_tables:
         if '::' in table:
             id_prefix, table = table.split('::', 1)
@@ -61,7 +64,8 @@ def create_queries(options):
         start_window = start_of_full_window
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, table=table, start=start_window, end=end_window)
+            query = template.format(id_prefix=id_prefix, table=table, 
+                            start=start_window, end=end_window, vessel_id=vessel_id_txt)
             print(query)
             yield query
             start_window = end_window + datetime.timedelta(days=1)
