@@ -7,6 +7,7 @@ class DummyOptions(object):
         self.end_date = end_date
         self.source_tables = [source_table]
         self.fast_test = False
+        self.vessel_id_column = None
     def view_as(self, x):
       return self
 
