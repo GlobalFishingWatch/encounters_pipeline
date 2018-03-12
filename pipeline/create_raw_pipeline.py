@@ -8,6 +8,7 @@ from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
 from apache_beam.options.pipeline_options import GoogleCloudOptions
+from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 from apache_beam.transforms.window import TimestampedValue
 
@@ -29,8 +30,6 @@ from pipeline.transforms.writers import WriteToBq
 
 RESAMPLE_INCREMENT_MINUTES = 10.0
 MAX_GAP_HOURS = 1.0
-MAX_ENCOUNTER_DISTANCE_KM = 0.5
-MIN_ENCOUNTER_TIME_MINUTES = 120.0
 PRECURSOR_DAYS = 1
 
 
@@ -42,7 +41,7 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
-      CONCAT("{id_prefix}", vessel_id) AS id
+      CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
       TABLE_DATE_RANGE([{table}], 
                             TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
@@ -54,6 +53,9 @@ def create_queries(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d') 
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d') 
+
+    vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
+
     for table in create_options.source_tables:
         if '::' in table:
             id_prefix, table = table.split('::', 1)
@@ -63,7 +65,8 @@ def create_queries(options):
         start_window = start_of_full_window
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, table=table, start=start_window, end=end_window)
+            query = template.format(id_prefix=id_prefix, table=table, 
+                            start=start_window, end=end_window, vessel_id=vessel_id_txt)
             print(query)
             yield query
             start_window = end_window + datetime.timedelta(days=1)
@@ -95,12 +98,12 @@ def run(options):
         | Record.FromDict()
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
-        | ComputeAdjacency(max_adjacency_distance_km=MAX_ENCOUNTER_DISTANCE_KM) 
+        | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
         )
 
     (adjacencies
-        | ComputeEncounters(max_km_for_encounter=MAX_ENCOUNTER_DISTANCE_KM, 
-                            min_minutes_for_encounter=MIN_ENCOUNTER_TIME_MINUTES) 
+        | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
+                            min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | Encounter.ToDict()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
@@ -119,10 +122,15 @@ def run(options):
                 )
             )
 
-
     result = p.run()
 
-    success_states = set([PipelineState.DONE, PipelineState.RUNNING, PipelineState.UNKNOWN])
+    success_states = set([PipelineState.DONE])
+
+    if create_options.wait or options.view_as(StandardOptions).runner == 'DirectRunner':
+        result.wait_until_finish()
+    else:
+        success_states.add(PipelineState.RUNNING)
+        success_states.add(PipelineState.UNKNOWN)
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1

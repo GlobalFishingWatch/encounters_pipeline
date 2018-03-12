@@ -9,7 +9,7 @@ DEPENDENCIES = [
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==0.1.3"
+    "pipe-tools==0.1.4"
 ]
 
 # Frozen dependencies for the google cloud dataflow dependency

@@ -19,6 +19,10 @@ class CreateOptions(PipelineOptions):
                               help="First date to look for entry/exit events.")
         required.add_argument('--end_date', required=True, 
                             help="Last date (inclusive) to look for entry/exit events.")
+        required.add_argument('--max_encounter_dist_km', required=True, type=float,
+                            help="Maximum distance for vessels to be elegible for an encounters")
+        required.add_argument('--min_encounter_time_minutes', required=True, type=float,
+                            help="Minimum minutes of vessel adjacency before we have an encounter")
 
         optional.add_argument('--raw_sink_write_disposition', default='WRITE_APPEND',
                             help='How to merge the output of this process with whatever records are already there'
@@ -28,3 +32,5 @@ class CreateOptions(PipelineOptions):
                             help='Wait for Dataflow to complete.')
         optional.add_argument('--neighbor_table', 
                             help='Table to write neighbor counts to')
+        optional.add_argument('--vessel_id_column', 
+                              help='value to use in query for extracting vessel_id')

@@ -15,10 +15,8 @@ def run(args):
 
     from pipeline import merge_pipeline
 
-    merge_pipeline.run(options)
+    return merge_pipeline.run(options)
 
-    if options.view_as(MergeOptions).wait: 
-        job.wait_until_finish()
 
 if __name__ == '__main__':
     import sys
