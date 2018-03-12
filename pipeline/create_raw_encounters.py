@@ -15,10 +15,8 @@ def run(args):
 
     from pipeline import create_raw_pipeline
 
-    create_raw_pipeline.run(options)
+    return create_raw_pipeline.run(options)
 
-    if options.view_as(CreateOptions).wait: 
-        job.wait_until_finish()
 
 if __name__ == '__main__':
     import sys

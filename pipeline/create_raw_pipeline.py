@@ -8,6 +8,7 @@ from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
 from apache_beam.options.pipeline_options import GoogleCloudOptions
+from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 from apache_beam.transforms.window import TimestampedValue
 
@@ -121,10 +122,15 @@ def run(options):
                 )
             )
 
-
     result = p.run()
 
-    success_states = set([PipelineState.DONE, PipelineState.RUNNING, PipelineState.UNKNOWN])
+    success_states = set([PipelineState.DONE])
+
+    if create_options.wait or options.view_as(StandardOptions).runner == 'DirectRunner':
+        result.wait_until_finish()
+    else:
+        success_states.add(PipelineState.RUNNING)
+        success_states.add(PipelineState.UNKNOWN)
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1

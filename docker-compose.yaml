@@ -1,5 +1,12 @@
 version: '2'
 services:
+  pipe_encounters:
+    image: gfw/pipe-encounters
+    build: .
+    volumes:
+      - ".:/opt/project"
+      - "gcp:/root/.config/"
+
   create_raw_encounters:
     entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]  
     image: gfw/pipe-encounters

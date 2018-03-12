@@ -6,6 +6,7 @@ from apache_beam import Flatten
 from apache_beam import io
 from apache_beam import Pipeline
 from apache_beam.runners import PipelineState
+from apache_beam.options.pipeline_options import StandardOptions
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.filter_ports import FilterPorts
 from pipeline.transforms.filter_inland import FilterInland
@@ -45,9 +46,9 @@ def run(options):
         | Encounter.FromDict()
     )
 
-    if options.min_encounter_time_minutes is not None:
+    if merge_options.min_encounter_time_minutes is not None:
         raw_encounters = (raw_encounters
-            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > options.min_encounter_time_minutes)
+            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > merge_options.min_encounter_time_minutes)
         )
 
     merged  = (raw_encounters
@@ -67,10 +68,16 @@ def run(options):
         | "WriteFiltered" >> writer_filtered
     )
 
-
     result = p.run()
 
-    success_states = set([PipelineState.DONE, PipelineState.RUNNING, PipelineState.UNKNOWN])
+    success_states = set([PipelineState.DONE])
+
+    if merge_options.wait or options.view_as(StandardOptions).runner == 'DirectRunner':
+        result.wait_until_finish()
+    else:
+        success_states.add(PipelineState.RUNNING)
+        success_states.add(PipelineState.UNKNOWN)
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1
+
