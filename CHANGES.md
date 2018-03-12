@@ -1,11 +1,18 @@
 Changes
 =======
 
+0.1.19 2018-03-12
+-----------------
+
+* [#28](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/28)
+  Refactor airflow
+  
+  
 0.1.18 2018-02-08
 -----------------
 
 * [`#23`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/23)
-  Filter encounters output to the specified date rage
+  Filter encounters output to the specified date range
 * [`#25`](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/25)
   Added a backfill flag to disable running the encounters_merge dag task when backfilling
 
