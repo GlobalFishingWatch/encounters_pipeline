@@ -20,6 +20,8 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
     source_table="position_messages_" \
     temp_bucket="{{ var.value.TEMP_BUCKET }}"  \
+    events_dataset="{{ var.value.EVENTS_DATASET }}" \
+    events_table="encounter_events"
 
 echo "Installation Complete"
 

@@ -9,7 +9,8 @@ DEPENDENCIES = [
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==0.1.4"
+    "pipe-tools==0.1.5",
+    "jinja2-cli",
 ]
 
 # Frozen dependencies for the google cloud dataflow dependency
