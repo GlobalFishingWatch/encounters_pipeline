@@ -36,10 +36,10 @@ SELECT
   mean_longitude AS lon,
   start_time AS timestamp_min,
   end_time AS timestamp_max,
-  NULL AS lat_min,
-  NULL AS lat_max,
-  NULL AS lon_min,
-  NULL AS lon_max,
+  mean_latitude AS lat_min,
+  mean_latitude AS lat_max,
+  mean_longitude AS lon_min,
+  mean_longitude AS lon_max,
   TO_JSON_STRING(STRUCT(
         round(median_distance_km,3) as median_distance_km,
         round(median_speed_knots,3) as median_speed_knots
