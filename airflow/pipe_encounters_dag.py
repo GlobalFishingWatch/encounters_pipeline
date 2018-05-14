@@ -5,6 +5,7 @@ import logging
 from airflow import DAG
 from airflow.contrib.sensors.bigquery_sensor import BigQueryTableSensor
 from airflow.models import Variable
+from airflow.operators.bash_operator import BashOperator
 
 from pipe_tools.airflow.dataflow_operator import DataFlowDirectRunnerOperator
 from pipe_tools.airflow.config import load_config
@@ -13,42 +14,6 @@ from pipe_tools.airflow.config import default_args
 
 CONFIG = load_config('pipe_encounters')
 DEFAULT_ARGS = default_args(CONFIG)
-
-# GC_CONNECTION_ID = 'google_cloud_default'
-# BQ_CONNECTION_ID = 'google_cloud_default'
-#
-# THIS_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# DAG_FILES = THIS_SCRIPT_DIR
-#
-# config = Variable.get('pipe_encounters', deserialize_json=True)
-# config['ds_nodash'] = '{{ ds_nodash }}'
-# config['first_day_of_month'] = '{{ execution_date.replace(day=1).strftime("%Y-%m-%d") }}'
-# config['last_day_of_month'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y-%m-%d") }}'
-# config['first_day_of_month_nodash'] = '{{ execution_date.replace(day=1).strftime("%Y%m%d") }}'
-# config['last_day_of_month_nodash'] = '{{ (execution_date.replace(day=1) + macros.dateutil.relativedelta.relativedelta(months=1, days=-1)).strftime("%Y%m%d") }}'
-#
-#
-# processing_start_date_string = config['encounters_start_date'].strip()
-# processing_start_date = datetime.strptime(processing_start_date_string, "%Y-%m-%d")
-# python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
-#
-# default_args = {
-#     'owner': 'airflow',
-#     'depends_on_past': False,
-#     'start_date': processing_start_date,
-#     'end_date': processing_start_date,
-#     'email': ['tim@globalfishingwatch.org'],
-#     'email_on_failure': False,
-#     'email_on_retry': False,
-#     'retries': 1,
-#     'retry_delay': timedelta(minutes=5),
-#     'project_id': config['project_id'],
-#     'dataset_id': config['pipeline_dataset'],
-#     'bigquery_conn_id': BQ_CONNECTION_ID,
-#     'gcp_conn_id': GC_CONNECTION_ID,
-#     'write_disposition': 'WRITE_TRUNCATE',
-#     'allow_large_results': True,
-# }
 
 
 def table_sensor(dataset_id, table_id, date):
@@ -59,7 +24,8 @@ def table_sensor(dataset_id, table_id, date):
         poke_interval=10,   # check every 10 seconds for a minute
         timeout=60,
         retries=24*7,       # retry once per hour for a week
-        retry_delay=timedelta(minutes=60)
+        retry_delay=timedelta(minutes=60),
+        retry_exponential_backoff=False
     )
 
 
@@ -90,7 +56,6 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
             date=source_sensor_date)
 
         python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
-        logging.info("target: %s", python_target)
 
         # Note: task_id must use '-' instead of '_' because it gets used to create the dataflow job name, and
         # only '-' is allowed
@@ -146,7 +111,14 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                 )
             )
 
-            create_raw_encounters >> merge_encounters
+            publish_events = BashOperator(
+                task_id='publish_events',
+                bash_command='{docker_run} {docker_image} publish_events '
+                             '{project_id}:{pipeline_dataset}.{encounters_table} '
+                             '{project_id}:{events_dataset}.{events_table}'.format(**config)
+            )
+
+            create_raw_encounters >> merge_encounters >> publish_events
 
         return dag
 

@@ -28,6 +28,15 @@ services:
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
+
+  bash:
+    image: gfw/pipe-encounters
+    build: .
+    entrypoint: /bin/bash
+    volumes:
+      - ".:/opt/project"
+      - "gcp:/root/.config/"
+            
 volumes:
   gcp:
     external: True
