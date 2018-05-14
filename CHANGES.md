@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.2.0 2018-05-14
+-----------------
+
+* [#32](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/32)
+  Publish standardized encounter events
+
+  
 0.1.19 2018-03-12
 -----------------
 
