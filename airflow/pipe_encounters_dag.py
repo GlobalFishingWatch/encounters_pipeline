@@ -55,7 +55,6 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
             date=source_sensor_date)
 
         python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
-        logging.info("target: %s", python_target)
 
         # Note: task_id must use '-' instead of '_' because it gets used to create the dataflow job name, and
         # only '-' is allowed
