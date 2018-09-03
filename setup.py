@@ -2,14 +2,14 @@ import codecs
 from setuptools import setup, find_packages
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '0.2.0'
+PROJECT_VERSION = '0.2.1'
 PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
     "ujson",
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==0.1.6",
+    "pipe-tools==0.1.7",
     "jinja2-cli",
 ]
 

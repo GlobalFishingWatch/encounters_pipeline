@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.2.1 2018-09-03
+-----------------
+
+* [#37](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/37)
+  Bump version of pipe-tools to 0.1.7
+
+
 0.2.0 2018-05-14
 -----------------
 
