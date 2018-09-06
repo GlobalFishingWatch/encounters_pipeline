@@ -6,7 +6,6 @@ display_usage() {
 	echo "Available Commands"
 	echo "  create_raw_encounters       create raw encounters dataflow"
 	echo "  merge_encounters            merge encounters dataflow"
-	echo "  publish_events              publish encounter events"
 }
 
 
@@ -27,10 +26,6 @@ case $1 in
   merge_encounters)
 
     python -m pipeline.merge_encounters "${@:2}"
-    ;;
-
-  publish_events)
-    ${THIS_SCRIPT_DIR}/publish_events.sh "${@:2}"
     ;;
 
 
