@@ -111,14 +111,7 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                 )
             )
 
-            publish_events = BashOperator(
-                task_id='publish_events',
-                bash_command='{docker_run} {docker_image} publish_events '
-                             '{project_id}:{pipeline_dataset}.{encounters_table} '
-                             '{project_id}:{events_dataset}.{events_table}'.format(**config)
-            )
-
-            create_raw_encounters >> merge_encounters >> publish_events
+            create_raw_encounters >> merge_encounters
 
         return dag
 
