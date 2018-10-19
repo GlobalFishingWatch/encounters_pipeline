@@ -21,7 +21,8 @@ class BaseMask(object):
         with rasterio.open(path) as src:
             [img] = src.read()
             height, width = img.shape
-        [first_x, dx, shear_0, first_y, shear_1, dy] = src.transform
+            # [first_x, dx, shear_0, first_y, shear_1, dy] = 
+            [dx, shear_0, first_x, shear_1, dy, first_y] = src.transform[:6]
         assert shear_0 == shear_1 == 0, "shearing is not supported"
         assert dx > 0 and dy < 0, "only normal image orientation supported"
         last_x = first_x + dx * width
@@ -148,4 +149,15 @@ def test(sparse_path, dense_path, threshold=0.5, invert=False):
     d2 = time.clock() - t0
     print("Sparse", d2, "seconds")
     print("Time Ratio", d2 / d1)
+
+
+def rasterize(mask, resolution=(1000, 2000)):
+    import numpy as np
+    img = np.zeros(resolution, dtype=float)
+    lats = np.linspace(mask.MAX_LAT - 1e-3, mask.MIN_LAT + 1e-3, resolution[0])
+    lons = np.linspace(mask.MIN_LON + 1e-3, mask.MAX_LON - 1e-3, resolution[1])
+    for i, lt in enumerate(lats):
+        for j, ln in enumerate(lons):
+            img[i, j] = mask.query(lt, ln)
+    return img
 

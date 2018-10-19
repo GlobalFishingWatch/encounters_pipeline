@@ -127,6 +127,13 @@ be prepended to ids from that source. For example:
                 --job_name mixed-encounters-test \
                 --max_num_workers 200
 
+## Updating the Distance to Port Mask
+
+Run:
+
+    python -c 'from pipeline.transforms import mask; mask.BaseMask.sparsify(RASTER_PATH, "pipeline/data/dist_to_port_10km.pickle", 10)'
+
+Then commit your changes.
 
 # License
 
