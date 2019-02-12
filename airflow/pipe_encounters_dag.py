@@ -7,9 +7,11 @@ from airflow.contrib.sensors.bigquery_sensor import BigQueryTableSensor
 from airflow.models import Variable
 from airflow.operators.bash_operator import BashOperator
 
+
 from pipe_tools.airflow.dataflow_operator import DataFlowDirectRunnerOperator
 from pipe_tools.airflow.config import load_config
 from pipe_tools.airflow.config import default_args
+from pipe_tools.airflow.operators.bigquery_operator import BigQueryCreateEmptyTableOperator
 
 
 CONFIG = load_config('pipe_encounters')
@@ -88,6 +90,26 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
         dag >> source_exists >> create_raw_encounters
 
         if not config.get('backfill', False):
+            ensure_creation_tables = BigQueryCreateEmptyTableOperator(
+                task_id='ensure_raw_encounters_creation_tables',
+                dataset_id='{pipeline_dataset}'.format(**config),
+                table_id='{raw_table}'.format(**config),
+                schema_fields=[
+                    { "type": "TIMESTAMP", "name": "start_time", "mode": "REQUIRED" },
+                    { "type": "TIMESTAMP", "name": "end_time", "mode": "REQUIRED" },
+                    { "type": "FLOAT", "name": "mean_latitude", "mode": "REQUIRED" },
+                    { "type": "FLOAT", "name": "mean_longitude", "mode": "REQUIRED" },
+                    { "type": "FLOAT", "name": "median_distance_km", "mode": "REQUIRED" },
+                    { "type": "FLOAT", "name": "median_speed_knots", "mode": "REQUIRED" },
+                    { "type": "STRING", "name": "vessel_1_id", "mode": "REQUIRED" },
+                    { "type": "INTEGER", "name": "vessel_1_point_count", "mode": "REQUIRED" },
+                    { "type": "STRING", "name": "vessel_2_id", "mode": "REQUIRED" },
+                    { "type": "INTEGER", "name": "vessel_2_point_count", "mode": "REQUIRED" }
+                ],
+                start_date_str=start_date,
+                end_date_str=end_date
+            )
+
             merge_encounters = DataFlowDirectRunnerOperator(
                 task_id='merge-encounters',
                 pool='dataflow',
@@ -111,7 +133,7 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                 )
             )
 
-            create_raw_encounters >> merge_encounters
+            create_raw_encounters >> ensure_creation_tables >> merge_encounters
 
         return dag
 
