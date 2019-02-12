@@ -8,10 +8,11 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
-* Increments version of pipe_tools to 0.2.5.
-* Ensures the creation of raw_encounters table before merge_encounters pipeline starts.
-
 ### ADDED
+
+  * [#957](https://github.com/GlobalFishingWatch/GFW-Tasks/issues/957)
+    * Increments version of pipe_tools to 0.2.5.
+    * Ensures the creation of raw_encounters table before merge_encounters pipeline starts.
 
   ## 0.3.1 2018-10-19
   * [#36](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/36)
