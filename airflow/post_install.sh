@@ -19,7 +19,9 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     raw_table="raw_encounters_" \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
     source_table="position_messages_" \
-    temp_bucket="{{ var.value.TEMP_BUCKET }}"  \
+    temp_bucket="{{ var.value.TEMP_BUCKET }}" \
+    dataflow_max_num_workers="100" \
+    dataflow_disk_size_gb="50"
 
 echo "Installation Complete"
 
