@@ -144,4 +144,4 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
 
 raw_encounters_daily_dag = build_dag('encounters_daily', '@daily')
 raw_encounters_monthly_dag = build_dag('encounters_monthly', '@monthly')
-raw_encounters_yearly_dag = build_dag('encounters_monthly', '@yearly')
+raw_encounters_yearly_dag = build_dag('encounters_yearly', '@yearly')
