@@ -19,8 +19,6 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     raw_table="raw_encounters_" \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
     temp_bucket="{{ var.value.TEMP_BUCKET }}"  \
-    events_dataset="{{ var.value.EVENTS_DATASET }}" \
-    events_table="encounter_events"
 
 echo "Installation Complete"
 

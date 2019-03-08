@@ -114,6 +114,13 @@ be prepended to ids from that source. For example:
                 --setup_file ./setup.py \
                 --runner DataflowRunner 
 
+## Updating the Distance to Port Mask
+
+Run:
+
+    python -c 'from pipeline.transforms import mask; mask.BaseMask.sparsify(RASTER_PATH, "pipeline/data/dist_to_port_10km.pickle", 10)'
+
+Then commit your changes.
 
         docker-compose run merge_encounters \
                 --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_mixed_indo_ais_encounters_test_ \
