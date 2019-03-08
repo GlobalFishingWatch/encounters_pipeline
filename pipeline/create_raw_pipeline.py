@@ -67,6 +67,7 @@ def create_queries(options):
             id_prefix += ':'
         else:
             id_prefix = ''
+        dataset = dataset.replace(':', '.')
         start_window = start_of_full_window
         position_table = dataset + '.position_messages_'
         segment_table = dataset + '.segments_'
