@@ -9,7 +9,7 @@ DEPENDENCIES = [
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==0.1.7",
+    "pipe-tools==0.2.5",
     "jinja2-cli",
 ]
 
