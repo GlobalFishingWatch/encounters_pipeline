@@ -10,9 +10,9 @@ class CreateOptions(PipelineOptions):
         required = parser.add_argument_group('Required')
         optional = parser.add_argument_group('Optional')
 
-        required.add_argument('--source_table', required=True, 
-                            action='append', dest='source_tables',
-                            help='Name of of anchorages table (BQ)')
+        required.add_argument('--source_dataset', required=True, 
+                            action='append', dest='source_datasets',
+                            help='Name of of datset to pull `position_messages_` and `segments_` tables from (BQ)')
         required.add_argument('--raw_table', required=True, 
                             help='Table to write raw (unmerged) encounters to')
         required.add_argument('--start_date', required=True, 

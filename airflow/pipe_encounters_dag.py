@@ -58,7 +58,12 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
 
         source_exists = table_sensor(
             dataset_id='{source_dataset}'.format(**config),
-            table_id='{source_table}'.format(**config),
+            table_id='position_messages_',
+            date=source_sensor_date)
+
+        segment_table_exists = table_sensor(
+            dataset_id='{source_dataset}'.format(**config),
+            table_id='segments_',
             date=source_sensor_date)
 
         python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
@@ -79,7 +84,7 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                 end_date=end_date,
                 max_encounter_dist_km=config['max_encounter_dist_km'],
                 min_encounter_time_minutes=config['min_encounter_time_minutes'],
-                source_table='{project_id}:{source_dataset}.{source_table}'.format(**config),
+                source_dataset='{project_id}:{source_dataset}'.format(**config),
                 raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
                 neighbor_table='{project_id}:{pipeline_dataset}.{neighbor_table}'.format(**config),
                 temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),

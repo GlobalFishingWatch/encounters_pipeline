@@ -2,10 +2,10 @@
 from pipeline.create_raw_pipeline import create_queries
 
 class DummyOptions(object):
-    def __init__(self, start_date, end_date, source_table="SOURCE_TABLE"):
+    def __init__(self, start_date, end_date, source_dataset="SOURCE_DATASET"):
         self.start_date = start_date
         self.end_date = end_date
-        self.source_tables = [source_table]
+        self.source_datasets = [source_dataset]
         self.fast_test = False
         self.vessel_id_column = None
     def view_as(self, x):
@@ -14,38 +14,46 @@ class DummyOptions(object):
 
 def test_create_queries_1():
     options=DummyOptions("2016-01-01", "2016-01-01")
-    assert list(create_queries(options)) == ["""
+    assert [x.strip() for x in create_queries(options)] == [x.strip() for x in ["""
     SELECT
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
-      FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
+      UNIX_MILLIS(a.timestamp) / 1000.0  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([SOURCE_TABLE], 
-                            TIMESTAMP('2015-12-31'), TIMESTAMP('2016-01-01'))
-    WHERE
-      lat   IS NOT NULL AND
-      lon   IS NOT NULL AND
-      speed IS NOT NULL
-    """]
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.position_messages_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20151231' AND '20160101' AND
+              lat   IS NOT NULL AND
+              lon   IS NOT NULL AND
+              speed IS NOT NULL) a
+    INNER JOIN
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.segments_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20151231' AND '20160101' AND
+        noise = FALSE) b
+    USING(_TABLE_SUFFIX, seg_id)
+    """]]
     
 def test_create_queries_2():
     options=DummyOptions("2012-5-01", "2017-05-15")
-    assert list(create_queries(options)) == ["""
+    assert [x.strip() for x in create_queries(options)] == [x.strip() for x in ["""
     SELECT
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
-      FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
+      UNIX_MILLIS(a.timestamp) / 1000.0  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([SOURCE_TABLE], 
-                            TIMESTAMP('2012-04-30'), TIMESTAMP('2015-01-24'))
-    WHERE
-      lat   IS NOT NULL AND
-      lon   IS NOT NULL AND
-      speed IS NOT NULL
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.position_messages_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20120430' AND '20150124' AND
+              lat   IS NOT NULL AND
+              lon   IS NOT NULL AND
+              speed IS NOT NULL) a
+    INNER JOIN
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.segments_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20120430' AND '20150124' AND
+        noise = FALSE) b
+    USING(_TABLE_SUFFIX, seg_id)
     """,
 
         """
@@ -53,14 +61,17 @@ def test_create_queries_2():
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
-      FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
+      UNIX_MILLIS(a.timestamp) / 1000.0  AS timestamp,
       CONCAT("", vessel_id) AS id
     FROM
-      TABLE_DATE_RANGE([SOURCE_TABLE], 
-                            TIMESTAMP('2015-01-25'), TIMESTAMP('2017-05-15'))
-    WHERE
-      lat   IS NOT NULL AND
-      lon   IS NOT NULL AND
-      speed IS NOT NULL
-    """
-        ]
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.position_messages_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20150125' AND '20170515' AND
+              lat   IS NOT NULL AND
+              lon   IS NOT NULL AND
+              speed IS NOT NULL) a
+    INNER JOIN
+      (SELECT *, _TABLE_SUFFIX FROM `SOURCE_DATASET.segments_*` 
+        WHERE _TABLE_SUFFIX BETWEEN '20150125' AND '20170515' AND
+        noise = FALSE) b
+    USING(_TABLE_SUFFIX, seg_id)
+    """]]
