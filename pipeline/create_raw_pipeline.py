@@ -40,20 +40,24 @@ def create_queries(options):
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
-      UNIX_MILLIS(a.timestamp) / 1000.0  AS timestamp,
+      UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
-      (SELECT *, _TABLE_SUFFIX FROM `{position_table}*` 
-        WHERE _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' AND
-              lat   IS NOT NULL AND
-              lon   IS NOT NULL AND
-              speed IS NOT NULL) a
-    INNER JOIN
-      (SELECT *, _TABLE_SUFFIX FROM `{segment_table}*` 
-        WHERE _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' AND
-        noise = FALSE) b
-    USING(_TABLE_SUFFIX, seg_id)
-
+        `{position_table}*` 
+    WHERE
+        _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+        AND lat     IS NOT NULL
+        AND lon     IS NOT NULL
+        AND speed   IS NOT NULL
+        AND seg_id IN (
+                SELECT seg_id
+                    FROM `{segment_table}*` 
+                WHERE
+                    _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+                    AND noise = FALSE
+                GROUP BY seg_id
+            )
+        GROUP BY 1,2,3,4,5
     """
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d') 
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
