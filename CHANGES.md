@@ -10,8 +10,11 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ### Added
 
+## 0.3.3
+
 * [GlobalFishingWatch/GFW-Tasks#990](https://github.com/GlobalFishingWatch/GFW-Tasks/issues/990)
   * Support the Yearly mode
+* Remove noise segments using the segment table noise flag.
 
 ## 0.3.2
 
