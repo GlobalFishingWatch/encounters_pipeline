@@ -47,6 +47,10 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
         source_sensor_date = '{last_day_of_month_nodash}'.format(**config)
         start_date = '{first_day_of_month}'.format(**config)
         end_date = '{last_day_of_month}'.format(**config)
+    elif schedule_interval == '@yearly':
+        source_sensor_date = '{last_day_of_year_nodash}'.format(**config)
+        start_date = '{first_day_of_year}'.format(**config)
+        end_date = '{last_day_of_year}'.format(**config)
     else:
         raise ValueError('Unsupported schedule interval {}'.format(schedule_interval))
 
@@ -85,8 +89,8 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                 neighbor_table='{project_id}:{pipeline_dataset}.{neighbor_table}'.format(**config),
                 temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
                 staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
-                max_num_workers="100",
-                disk_size_gb="50",
+                max_num_workers='{dataflow_max_num_workers}'.format(**config),
+                disk_size_gb='{dataflow_disk_size_gb}'.format(**config),
                 requirements_file='./requirements.txt',
                 setup_file='./setup.py'
             )
@@ -131,8 +135,8 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
                     sink='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
                     temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
                     staging_location='gs://{temp_bucket}/dataflow_staging'.format(**config),
-                    max_num_workers="100",
-                    disk_size_gb="50",
+                    max_num_workers='{dataflow_max_num_workers}'.format(**config),
+                    disk_size_gb='{dataflow_disk_size_gb}'.format(**config),
                     requirements_file='./requirements.txt',
                     setup_file='./setup.py'
                 )
@@ -145,3 +149,4 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
 
 raw_encounters_daily_dag = build_dag('encounters_daily', '@daily')
 raw_encounters_monthly_dag = build_dag('encounters_monthly', '@monthly')
+raw_encounters_yearly_dag = build_dag('encounters_yearly', '@yearly')
