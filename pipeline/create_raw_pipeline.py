@@ -40,15 +40,24 @@ def create_queries(options):
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
-      FLOAT(TIMESTAMP_TO_MSEC(timestamp)) / 1000  AS timestamp,
+      UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
-      TABLE_DATE_RANGE([{table}], 
-                            TIMESTAMP('{start:%Y-%m-%d}'), TIMESTAMP('{end:%Y-%m-%d}'))
+        `{position_table}*` 
     WHERE
-      lat   IS NOT NULL AND
-      lon   IS NOT NULL AND
-      speed IS NOT NULL
+        _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+        AND lat     IS NOT NULL
+        AND lon     IS NOT NULL
+        AND speed   IS NOT NULL
+        AND seg_id IN (
+                SELECT seg_id
+                    FROM `{segment_table}*` 
+                WHERE
+                    _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+                    AND noise = FALSE
+                GROUP BY seg_id
+            )
+        GROUP BY 1,2,3,4,5
     """
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d') 
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
@@ -56,17 +65,20 @@ def create_queries(options):
 
     vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
 
-    for table in create_options.source_tables:
-        if '::' in table:
-            id_prefix, table = table.split('::', 1)
+    for dataset in create_options.source_datasets:
+        if '::' in dataset:
+            id_prefix, dataset = dataset.split('::', 1)
             id_prefix += ':'
         else:
             id_prefix = ''
+        dataset = dataset.replace(':', '.')
         start_window = start_of_full_window
+        position_table = dataset + '.position_messages_'
+        segment_table = dataset + '.segments_'
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, table=table, 
-                            start=start_window, end=end_window, vessel_id=vessel_id_txt)
+            query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
+                            start=start_window, end=end_window, vessel_id=vessel_id_txt, min_message_count=2)
             print(query)
             yield query
             start_window = end_window + datetime.timedelta(days=1)
@@ -89,7 +101,8 @@ def run(options):
                 project=cloud_options.project
                 )
 
-    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project)))
+    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
+                                                                                  use_standard_sql=True)))
                     for (i, x) in enumerate(create_queries(options))]
 
 

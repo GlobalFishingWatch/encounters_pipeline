@@ -44,7 +44,7 @@ instructions there.
 In incremental mode, the form of the command is
 
         docker-compose run pipeline \
-                --source_table SOURCE_TABLE \
+                --source_dataset SOURCE_DATASET \
                 --start_date DATE \
                 --end_date DATE \
                 --max_encounter_dist_km DISTANCE \
@@ -60,24 +60,9 @@ In incremental mode, the form of the command is
 Note that raw_table needs to be persistent since it is appended to with each run.
 Here is a concrete example:
 
-        docker-compose run create_raw_encounters \
-                --source_table pipeline_classify_p_p516_daily. \
-                --start_date 2017-01-01 \
-                --end_date 2017-01-01 \
-                --max_encounter_dist_km 0.5 \
-                --min_encounter_time_minutes 120 \
-                --raw_sink world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_test \
-                --sink world-fishing-827:machine_learning_dev_ttl_30d.encounters_test \
-                remote \
-                --project world-fishing-827 \
-                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
-                --job_name encounters-test \
-                --max_num_workers 200
-
-
 
         docker-compose run create_raw_encounters \
-                --source_table pipe_staging_a.position_messages_ \
+                --source_dataset pipe_staging_a \
                 --start_date 2017-01-01 \
                 --end_date 2017-12-31 \
                 --max_encounter_dist_km 0.5 \
@@ -113,19 +98,21 @@ Here is a concrete example:
 It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX::`, which will
 be prepended to ids from that source. For example:
 
-        docker-compose run pipeline \
-                --source_table ais::pipeline_classify_p_p516_daily. \
-                --source_table peru_vms::pipeline_p_p588_peru.classify_ \
+        docker-compose run create_raw_encounters \
+                --source_dataset ais::pipe_production_b \
+                --source_dataset indo_vms::pipe_indo_production_v20180727 \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
                 --start_date 2015-01-01 \
-                --end_date 2015-01-01 \
-                --raw_sink_table world-fishing-827:machine_learning_dev_ttl_30d.raw_mixed_encounters_test \
-                --sink world-fishing-827:machine_learning_dev_ttl_30d.mixed_encounters_test \
+                --end_date 2015-12-31 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_mixed_indo_ais_encounters_test_ \
                 --project world-fishing-827 \
-                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --temp_location gs://machine-learning-dev-ttl-120d/scratch/encounters \
                 --job_name mixed-encounters-test \
-                --max_num_workers 200
+                --max_num_workers 100 \
+                --requirements_file requirements.txt \
+                --setup_file ./setup.py \
+                --runner DataflowRunner 
 
 ## Updating the Distance to Port Mask
 
@@ -134,6 +121,22 @@ Run:
     python -c 'from pipeline.transforms import mask; mask.BaseMask.sparsify(RASTER_PATH, "pipeline/data/dist_to_port_10km.pickle", 10)'
 
 Then commit your changes.
+
+        docker-compose run merge_encounters \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_mixed_indo_ais_encounters_test_ \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_120d.mixed_indo_ais_encounters_test \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 120 \
+                --start_date 2015-01-01 \
+                --end_date 2015-01-31 \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name mixed-encounters-merge-test \
+                --max_num_workers 50 \
+                --setup_file ./setup.py \
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100
 
 # License
 
