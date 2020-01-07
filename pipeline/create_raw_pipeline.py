@@ -43,7 +43,7 @@ def create_queries(options):
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
-        `{position_table}*` 
+        `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
         AND lat     IS NOT NULL
@@ -51,7 +51,7 @@ def create_queries(options):
         AND speed   IS NOT NULL
         AND seg_id IN (
                 SELECT seg_id
-                    FROM `{segment_table}*` 
+                    FROM `{segment_table}*`
                 WHERE
                     _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
                     AND noise = FALSE
