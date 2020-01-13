@@ -33,7 +33,7 @@ VOLUME ["/root/.config"]
 COPY . /opt/project
 RUN \
   pip install -r requirements.txt && \
-  pip install --process-dependency-links -e .
+  pip install -e .
 
 # Setup the entrypoint for quickly executing the pipelines
 ENTRYPOINT ["scripts/run.sh"]
