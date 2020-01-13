@@ -3,41 +3,41 @@ import pytz
 from .test_resample import ResampledRecord
 
 path_1 = [
-    ResampledRecord("2011-01-01 15:40:00 UTC", -1.5032387, 55.2340155, id=1),
-    ResampledRecord("2011-01-01 15:50:00 UTC", -1.4869308, 55.232743, id=1),
-    ResampledRecord("2011-01-01 16:00:00 UTC", -1.4752579, 55.2292189, id=1),
+    ResampledRecord("2011-01-01 15:40:00 UTC", -1.5032387, 55.2340155, id='1'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", -1.4869308, 55.232743, id='1'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", -1.4752579, 55.2292189, id='1'),
     # Encounter start.
-    ResampledRecord("2011-01-01 16:10:00 UTC", -1.4719963, 55.2251069, id=1),
-    ResampledRecord("2011-01-01 16:20:00 UTC", -1.471653, 55.2224633, id=1),
-    ResampledRecord("2011-01-01 16:30:00 UTC", -1.4718246, 55.21991750, id=1),
-    ResampledRecord("2011-01-01 16:40:00 UTC", -1.472168, 55.2185466, id=1),
-    ResampledRecord("2011-01-01 16:50:00 UTC", -1.4718246, 55.2167839, id=1),
-    ResampledRecord("2011-01-01 17:00:00 UTC", -1.4725113, 55.2156088, id=1),
-    ResampledRecord("2011-01-01 17:10:00 UTC", -1.4730263, 55.2139439, id=1),
+    ResampledRecord("2011-01-01 16:10:00 UTC", -1.4719963, 55.2251069, id='1'),
+    ResampledRecord("2011-01-01 16:20:00 UTC", -1.471653, 55.2224633, id='1'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", -1.4718246, 55.21991750, id='1'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", -1.472168, 55.2185466, id='1'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", -1.4718246, 55.2167839, id='1'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", -1.4725113, 55.2156088, id='1'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", -1.4730263, 55.2139439, id='1'),
     # Encounter end.
-    ResampledRecord("2011-01-01 17:20:00 UTC", -1.4859009, 55.2089489, id=1),
-    ResampledRecord("2011-01-01 17:30:00 UTC", -1.4974022, 55.2078715, id=1),
-    ResampledRecord("2011-01-01 17:40:00 UTC", -1.5140533, 55.2069899, id=1)
+    ResampledRecord("2011-01-01 17:20:00 UTC", -1.4859009, 55.2089489, id='1'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", -1.4974022, 55.2078715, id='1'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", -1.5140533, 55.2069899, id='1')
 ]
 
 path_2 = [
-    ResampledRecord("2011-01-01 15:20:00 UTC", -1.4065933, 55.2350923, id=2),
-    ResampledRecord("2011-01-01 15:30:00 UTC", -1.4218712, 55.2342113, id=2),
-    ResampledRecord("2011-01-01 15:40:00 UTC", -1.4467621, 55.2334282, id=2),
-    ResampledRecord("2011-01-01 15:50:00 UTC", -1.4623833, 55.2310789, id=2),
-    ResampledRecord("2011-01-01 16:00:00 UTC", -1.469593, 55.2287294, id=2),
+    ResampledRecord("2011-01-01 15:20:00 UTC", -1.4065933, 55.2350923, id='2'),
+    ResampledRecord("2011-01-01 15:30:00 UTC", -1.4218712, 55.2342113, id='2'),
+    ResampledRecord("2011-01-01 15:40:00 UTC", -1.4467621, 55.2334282, id='2'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", -1.4623833, 55.2310789, id='2'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", -1.469593, 55.2287294, id='2'),
     # Encounter start.
-    ResampledRecord("2011-01-01 16:10:00 UTC", -1.471138, 55.2267713, id=2),
-    ResampledRecord("2011-01-01 16:30:00 UTC", -1.4704514, 55.2206029, id=2),
-    ResampledRecord("2011-01-01 16:40:00 UTC", -1.4704514, 55.218057, id=2),
-    ResampledRecord("2011-01-01 16:50:00 UTC", -1.4704514, 55.215217, id=2),
-    ResampledRecord("2011-01-01 17:00:00 UTC", -1.4728546, 55.2116913, id=2),
+    ResampledRecord("2011-01-01 16:10:00 UTC", -1.471138, 55.2267713, id='2'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", -1.4704514, 55.2206029, id='2'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", -1.4704514, 55.218057, id='2'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", -1.4704514, 55.215217, id='2'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", -1.4728546, 55.2116913, id='2'),
     # Encounter end.
-    ResampledRecord("2011-01-01 17:10:00 UTC", -1.4718246, 55.2088509, id=2),
-    ResampledRecord("2011-01-01 17:20:00 UTC", -1.4474487, 55.2057165, id=2),
-    ResampledRecord("2011-01-01 17:30:00 UTC", -1.4278793, 55.2040512, id=2),
-    ResampledRecord("2011-01-01 17:40:00 UTC", -1.4084816, 55.2036594, id=2),
-    ResampledRecord("2011-01-01 17:50:00 UTC", -1.3998985, 55.2037574, id=2)
+    ResampledRecord("2011-01-01 17:10:00 UTC", -1.4718246, 55.2088509, id='2'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", -1.4474487, 55.2057165, id='2'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", -1.4278793, 55.2040512, id='2'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", -1.4084816, 55.2036594, id='2'),
+    ResampledRecord("2011-01-01 17:50:00 UTC", -1.3998985, 55.2037574, id='2')
 ]
 
 simple_series_data = path_1 + path_2

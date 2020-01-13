@@ -14,6 +14,8 @@ DEPENDENCIES = [
     "s2sphere",
     "pipe-tools==3.1.0",
     "jinja2-cli",
+    "pyarrow<0.14.0",
+    "six>=1.13"
 ]
 
 with codecs.open('requirements.txt', encoding='utf-8') as f:

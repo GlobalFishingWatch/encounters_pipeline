@@ -7,6 +7,7 @@ import datetime
 import pytz
 
 import apache_beam as beam
+from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
@@ -16,6 +17,7 @@ from .test_resample import ResampledRecord
 from .series_data import simple_series_data
 from .series_data import real_series_data
 
+from pipeline.create_raw_pipeline import ensure_bytes_id
 from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
@@ -55,6 +57,7 @@ class TestComputeEncounters(unittest.TestCase):
             results = (
                 p
                 | beam.Create(simple_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
@@ -66,6 +69,7 @@ class TestComputeEncounters(unittest.TestCase):
             results = (
                 p
                 | beam.Create(real_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
@@ -127,7 +131,7 @@ class TestComputeEncounters(unittest.TestCase):
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
                           -27.480823491781422, 38.53562707753466,
-                          0.030350584066300222,
+                          0.030350584066300215,
                           0.17049202182476167, 4, 5)
         ]
 
@@ -137,7 +141,7 @@ class TestComputeEncounters(unittest.TestCase):
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426759800.0), 
                   ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
-                  ('median_distance_km', 0.030350584066300222), 
+                  ('median_distance_km', 0.030350584066300215), 
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
                   ('vessel_1_id', '563418000'), 
@@ -159,5 +163,5 @@ class TestComputeEncounters(unittest.TestCase):
                  1426750800.0, 'mean_longitude': 38.53406239538655, 
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
-                 'median_distance_km': 0.029597875050467033, 'vessel_1_point_count': 12, 
+                 'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
                  'vessel_2_id': '563418000', 'vessel_1_id': '441910000'}]

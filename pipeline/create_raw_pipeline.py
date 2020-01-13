@@ -1,6 +1,7 @@
 import datetime
 import logging
 import pytz
+import six
 
 from apache_beam import io
 from apache_beam import Filter
@@ -83,6 +84,9 @@ def create_queries(options):
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
+
 def run(options):
 
     p = Pipeline(options=options)
@@ -109,6 +113,7 @@ def run(options):
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
+        | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
