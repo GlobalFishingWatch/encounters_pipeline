@@ -81,7 +81,7 @@ class MergeEncounters(PTransform):
         return (
             xs
             | Map(self.key_by_ordered_mmsi).with_output_types(
-                beam.typehints.Tuple[beam.typehints.Tuple[six.text_type, six.text_type], T])
+                beam.typehints.Tuple[beam.typehints.Tuple[six.binary_type, six.binary_type], T])
             | "Group by Orderred MMSI" >> GroupByKey()
             | FlatMap(self.merge_encounters)
         )

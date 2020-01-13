@@ -81,6 +81,7 @@ class TestComputeEncounters(unittest.TestCase):
             results = (
                 p
                 | beam.Create(real_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
@@ -93,6 +94,7 @@ class TestComputeEncounters(unittest.TestCase):
             results = (
                 p
                 | beam.Create(real_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
@@ -103,16 +105,16 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_simple_expected(self):
         return [
-                    encounter.Encounter(1, 2,
+                    encounter.Encounter(b'1', b'2',
                         ts("2011-01-01T16:10:00Z"),
                         ts("2011-01-01T17:00:00Z"),
                         -1.4719963, 55.21973783333333,
                         0.20333088100150815,
                         0.6467305031568592, 6, 5),
-                    encounter.Encounter(2, 1,
+                    encounter.Encounter(b'2', b'1',
                         ts("2011-01-01T16:10:00Z"),
                         ts("2011-01-01T17:00:00Z"),
-                        -1.4710235833333334, 55.21933776666666,
+                        -1.4710235833333334, 55.21933776666667,
                         0.20333088100150815,
                         1.1175558891689739, 5, 6)
         ]
@@ -121,17 +123,17 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_real_expected(self):
         return [
-            encounter.Encounter('441910000', '563418000', 
+            encounter.Encounter(b'441910000', b'563418000', 
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T20:10:00Z"),
-                          -27.47909444042379, 38.533749458956926,
+                          -27.47909444042379, 38.53374945895693,
                           0.028845166034633843,
                           0.20569554161530468, 7, 6),
-            encounter.Encounter('563418000', '441910000',
+            encounter.Encounter(b'563418000', b'441910000',
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
                           -27.480823491781422, 38.53562707753466,
-                          0.030350584066300215,
+                          0.030350584066300222,
                           0.17049202182476167, 4, 5)
         ]
 
@@ -141,27 +143,27 @@ class TestComputeEncounters(unittest.TestCase):
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426759800.0), 
                   ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
-                  ('median_distance_km', 0.030350584066300215), 
+                  ('median_distance_km', 0.030350584066300222), 
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
-                  ('vessel_1_id', '563418000'), 
-                  ('vessel_2_id', '441910000')]), 
+                  ('vessel_1_id', b'563418000'), 
+                  ('vessel_2_id', b'441910000')]), 
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426795800.0), 
                   ('mean_latitude', -27.47909444042379), 
-                  ('mean_longitude', 38.533749458956926), 
+                  ('mean_longitude', 38.53374945895693), 
                   ('median_distance_km', 0.028845166034633843), 
                   ('median_speed_knots', 0.20569554161530468), 
                   ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
-                  ('vessel_1_id', '441910000'), 
-                  ('vessel_2_id', '563418000')])] 
+                  ('vessel_1_id', b'441910000'), 
+                  ('vessel_2_id', b'563418000')])] 
 
 
 
     def _get_merged_expected(self):
         return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
-                 1426750800.0, 'mean_longitude': 38.53406239538655, 
+                 1426750800.0, 'mean_longitude': 38.534062395386556, 
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
-                 'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
-                 'vessel_2_id': '563418000', 'vessel_1_id': '441910000'}]
+                 'median_distance_km': 0.029597875050467033, 'vessel_1_point_count': 12, 
+                 'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000'}]
