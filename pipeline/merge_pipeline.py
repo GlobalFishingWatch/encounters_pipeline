@@ -78,8 +78,6 @@ def run(options):
     (merged
         | FilterPorts()
         | FilterInland()
-        | "FilteredToDicts" >> Encounter.ToDict()
-        | 'Ensure VESSEL_X_ID is bytes' >> Map(ensure_bytes_vessel_id_dict)
         | "WriteFiltered" >> writer_filtered
     )
 
