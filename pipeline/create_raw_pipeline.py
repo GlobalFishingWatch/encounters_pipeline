@@ -1,13 +1,8 @@
-import datetime
-import logging
-import pytz
-import six
-
-from apache_beam import io
 from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
+from apache_beam import io
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
@@ -19,13 +14,18 @@ from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
 from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 from pipeline.schemas.output import build as output_build_schema
-from pipeline.transforms.group_by_id import GroupById
-from pipeline.transforms.sort_by_time import SortByTime
-from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
+from pipeline.transforms.group_by_id import GroupById
+from pipeline.transforms.resample import Resample
+from pipeline.transforms.sort_by_time import SortByTime
 from pipeline.transforms.writers import WriteToBq
+
+import datetime
+import logging
+import pytz
+import six
 
 
 

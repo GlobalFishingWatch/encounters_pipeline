@@ -1,18 +1,21 @@
+from apache_beam import Filter
+from apache_beam import Flatten
+from apache_beam import Map
+from apache_beam import Pipeline
+from apache_beam import io
+from apache_beam.options.pipeline_options import StandardOptions
+from apache_beam.runners import PipelineState
+
+from pipeline.objects.encounter import Encounter
+from pipeline.options.merge_options import MergeOptions
+from pipeline.transforms.filter_inland import FilterInland
+from pipeline.transforms.filter_ports import FilterPorts
+from pipeline.transforms.merge_encounters import MergeEncounters
+from pipeline.transforms.writers import WriteToBq
+
 import datetime
 import logging
 import pytz
-from apache_beam import Filter
-from apache_beam import Flatten
-from apache_beam import io
-from apache_beam import Pipeline
-from apache_beam.runners import PipelineState
-from apache_beam.options.pipeline_options import StandardOptions
-from pipeline.transforms.merge_encounters import MergeEncounters
-from pipeline.transforms.filter_ports import FilterPorts
-from pipeline.transforms.filter_inland import FilterInland
-from pipeline.objects.encounter import Encounter
-from pipeline.options.merge_options import MergeOptions
-from pipeline.transforms.writers import WriteToBq
 
 def ensure_bytes_id(obj):
     return obj._replace(id=six.ensure_binary(obj.id))
