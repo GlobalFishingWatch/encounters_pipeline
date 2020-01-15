@@ -21,12 +21,6 @@ import six
 def ensure_bytes_vessel_id(obj):
     return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))._replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
 
-def ensure_bytes_vessel_id_dict(dictionary):
-    logging.info('ensure_bytes_vessel_id_dict=%s' % dictionary)
-    dictionary['vessel_1_id']=six.ensure_binary(dictionary['vessel_1_id'])
-    dictionary['vessel_2_id']=six.ensure_binary(dictionary['vessel_2_id'])
-    return dictionary
-
 def run(options):
 
     p = Pipeline(options=options)
@@ -79,7 +73,6 @@ def run(options):
         | FilterPorts()
         | FilterInland()
         | "FilteredToDicts" >> Encounter.ToDict()
-        | 'Ensure VESSEL_X_ID is bytes' >> Map(ensure_bytes_vessel_id_dict)
         | "WriteFiltered" >> writer_filtered
     )
 
