@@ -19,7 +19,7 @@ import pytz
 import six
 
 def ensure_bytes_vessel_id(obj):
-    return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))_replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
+    return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))._replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
 
 def run(options):
 
