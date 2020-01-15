@@ -73,6 +73,7 @@ def run(options):
         | FilterPorts()
         | FilterInland()
         | "FilteredToDicts" >> Encounter.ToDict()
+        | 'Ensure ID is bytes' >> Map(ensure_bytes_vessel_id)
         | "WriteFiltered" >> writer_filtered
     )
 
