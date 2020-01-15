@@ -14,6 +14,9 @@ from pipeline.objects.encounter import Encounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.writers import WriteToBq
 
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
+
 def run(options):
 
     p = Pipeline(options=options)
@@ -44,6 +47,7 @@ def run(options):
     raw_encounters = (sources
         | Flatten()
         | Encounter.FromDict()
+        | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
     )
 
     if merge_options.min_encounter_time_minutes is not None:
