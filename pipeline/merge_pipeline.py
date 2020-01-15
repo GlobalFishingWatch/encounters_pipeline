@@ -16,9 +16,10 @@ from pipeline.transforms.writers import WriteToBq
 import datetime
 import logging
 import pytz
+import six
 
-def ensure_bytes_id(obj):
-    return obj._replace(id=six.ensure_binary(obj.id))
+def ensure_bytes_vessel_id(obj):
+    return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))_replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
 
 def run(options):
 
@@ -50,7 +51,7 @@ def run(options):
     raw_encounters = (sources
         | Flatten()
         | Encounter.FromDict()
-        | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+        | 'Ensure ID is bytes' >> Map(ensure_bytes_vessel_id)
     )
 
     if merge_options.min_encounter_time_minutes is not None:
