@@ -5,7 +5,7 @@ import codecs
 
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '1.0.0'
+PROJECT_VERSION = '2.0.0'
 PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
     "ujson",
