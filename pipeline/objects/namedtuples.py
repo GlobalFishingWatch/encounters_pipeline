@@ -1,5 +1,4 @@
 import json as ujson
-from pipe_tools.coders.jsoncoder import JSONDict
 import apache_beam as beam
 from apache_beam import typehints
 from apache_beam import PTransform
@@ -24,7 +23,7 @@ class NamedtupleCoder(beam.coders.Coder):
     time_fields = []
 
     @classmethod
-    def _encode(cls, value):        
+    def _encode(cls, value):
         replacements = {x: _datetime_to_s(getattr(value, x)) for x in cls.time_fields}
         return value._replace(**replacements)
 
@@ -48,8 +47,7 @@ class NamedtupleCoder(beam.coders.Coder):
     def register(cls):
         beam.coders.registry.register_coder(cls.target, cls)
 
-        @typehints.with_input_types(typehints.Tuple)
-        @typehints.with_output_types(cls.target)
+        @typehints.with_input_types(tuple)
         class FromTuple(beam.PTransform):
             """converts a tuple to a namedtuple"""
 
@@ -60,8 +58,6 @@ class NamedtupleCoder(beam.coders.Coder):
                 return p | beam.Map(self.from_tuple)
         cls.target.FromTuple = FromTuple
 
-        @typehints.with_input_types(typehints.Dict)
-        @typehints.with_output_types(cls.target)
         class FromDict(beam.PTransform):
             """converts a Dict to a namedtuple"""
 
@@ -72,13 +68,11 @@ class NamedtupleCoder(beam.coders.Coder):
                 return p | beam.Map(self.from_dict)
         cls.target.FromDict = FromDict
 
-        @typehints.with_input_types(cls.target)
-        @typehints.with_output_types(JSONDict)
         class ToDict(beam.PTransform):
-            """converts namedtuple to a JSONDict"""
+            """converts namedtuple to a dict"""
 
             def to_dict(self, x):
-                return JSONDict(**cls._encode(x)._asdict())
+                return cls._encode(x)._asdict()
 
             def expand(self, p):
                 return p | beam.Map(self.to_dict)

@@ -4,7 +4,6 @@ from apache_beam import Map
 from apache_beam import PTransform
 from apache_beam.transforms.window import TimestampedValue
 
-from pipe_tools.coders.jsoncoder import JSONDict
 from pipeline.objects.namedtuples import _datetime_to_s
 
 
@@ -16,9 +15,11 @@ class CreateTimestampedAdjacencies(PTransform):
 
 
     def extract_nbr_dict(self, item):
-        return JSONDict(vessel_id=item.id, 
-                        timestamp=_datetime_to_s(item.timestamp), 
-                        neighbor_count=item.neighbor_count)
+        return dict(
+            vessel_id=item.id,
+            timestamp=_datetime_to_s(item.timestamp),
+            neighbor_count=item.neighbor_count
+        )
 
     def expand(self, xs):
         return (xs

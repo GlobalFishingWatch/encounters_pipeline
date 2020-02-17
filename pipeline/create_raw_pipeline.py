@@ -1,12 +1,8 @@
-import datetime
-import logging
-import pytz
-
-from apache_beam import io
 from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
+from apache_beam import io
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
@@ -18,13 +14,18 @@ from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
 from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 from pipeline.schemas.output import build as output_build_schema
-from pipeline.transforms.group_by_id import GroupById
-from pipeline.transforms.sort_by_time import SortByTime
-from pipeline.transforms.resample import Resample
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
+from pipeline.transforms.group_by_id import GroupById
+from pipeline.transforms.resample import Resample
+from pipeline.transforms.sort_by_time import SortByTime
 from pipeline.transforms.writers import WriteToBq
+
+import datetime
+import logging
+import pytz
+import six
 
 
 
@@ -43,7 +44,7 @@ def create_queries(options):
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", {vessel_id}) AS id
     FROM
-        `{position_table}*` 
+        `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
         AND lat     IS NOT NULL
@@ -51,7 +52,7 @@ def create_queries(options):
         AND speed   IS NOT NULL
         AND seg_id IN (
                 SELECT seg_id
-                    FROM `{segment_table}*` 
+                    FROM `{segment_table}*`
                 WHERE
                     _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
                     AND noise = FALSE
@@ -83,6 +84,9 @@ def create_queries(options):
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
+
 def run(options):
 
     p = Pipeline(options=options)
@@ -109,6 +113,7 @@ def run(options):
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
+        | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
@@ -144,6 +149,7 @@ def run(options):
     else:
         success_states.add(PipelineState.RUNNING)
         success_states.add(PipelineState.UNKNOWN)
+        success_states.add(PipelineState.PENDING)
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1

@@ -1,13 +1,14 @@
-from apache_beam import PTransform
-from apache_beam import Map
+from ..objects.encounter import Encounter
 from apache_beam import FlatMap
 from apache_beam import GroupByKey
+from apache_beam import Map
+from apache_beam import PTransform
+from statistics import median
+
 import apache_beam as beam
 import datetime
 import pytz
-from statistics import median
-
-from ..objects.encounter import Encounter
+import six
 
 inf = float('inf')
 epoch = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=pytz.utc)
@@ -73,14 +74,14 @@ class MergeEncounters(PTransform):
                 records.append(rcd)
             end = enc.end_time
         if records:
-            yield self.encounter_from_records(key_id_1, key_id_2, records)      
+            yield self.encounter_from_records(key_id_1, key_id_2, records)
 
 
     def expand(self, xs):
         return (
             xs
             | Map(self.key_by_ordered_mmsi).with_output_types(
-                beam.typehints.Tuple[beam.typehints.Tuple[unicode, unicode], T])
+                beam.typehints.Tuple[beam.typehints.Tuple[six.binary_type, six.binary_type], T])
             | "Group by Orderred MMSI" >> GroupByKey()
             | FlatMap(self.merge_encounters)
         )

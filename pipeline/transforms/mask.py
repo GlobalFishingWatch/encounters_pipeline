@@ -76,7 +76,7 @@ class BaseMask(object):
 class Mask(BaseMask):
 
     def __init__(self, path, check=False):
-        with open(path) as f:
+        with open(path, "rb") as f:
             mask_info = pickle.load(f)
         self.mask_data = mask_info['data']
         self.MAX_LAT = mask_info['max_lat']
