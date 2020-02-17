@@ -1,18 +1,25 @@
+from apache_beam import Filter
+from apache_beam import Flatten
+from apache_beam import Map
+from apache_beam import Pipeline
+from apache_beam import io
+from apache_beam.options.pipeline_options import StandardOptions
+from apache_beam.runners import PipelineState
+
+from pipeline.objects.encounter import Encounter
+from pipeline.options.merge_options import MergeOptions
+from pipeline.transforms.filter_inland import FilterInland
+from pipeline.transforms.filter_ports import FilterPorts
+from pipeline.transforms.merge_encounters import MergeEncounters
+from pipeline.transforms.writers import WriteToBq
+
 import datetime
 import logging
 import pytz
-from apache_beam import Filter
-from apache_beam import Flatten
-from apache_beam import io
-from apache_beam import Pipeline
-from apache_beam.runners import PipelineState
-from apache_beam.options.pipeline_options import StandardOptions
-from pipeline.transforms.merge_encounters import MergeEncounters
-from pipeline.transforms.filter_ports import FilterPorts
-from pipeline.transforms.filter_inland import FilterInland
-from pipeline.objects.encounter import Encounter
-from pipeline.options.merge_options import MergeOptions
-from pipeline.transforms.writers import WriteToBq
+import six
+
+def ensure_bytes_vessel_id(obj):
+    return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))._replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
 
 def run(options):
 
@@ -44,6 +51,7 @@ def run(options):
     raw_encounters = (sources
         | Flatten()
         | Encounter.FromDict()
+        | 'Ensure VESSEL_X_ID is bytes' >> Map(ensure_bytes_vessel_id)
     )
 
     if merge_options.min_encounter_time_minutes is not None:
@@ -77,6 +85,7 @@ def run(options):
     else:
         success_states.add(PipelineState.RUNNING)
         success_states.add(PipelineState.UNKNOWN)
+        success_states.add(PipelineState.PENDING)
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1

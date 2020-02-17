@@ -10,6 +10,15 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ### Added
 
+## v2.0.0 - 2020-01-29
+
+### Changed
+
+* [GlobalFishingWatch/GFW-Tasks#1166](https://github.com/GlobalFishingWatch/GFW-Tasks/issues/1166): Changes
+   * supports [pipe-tools:v3.1.0](https://github.com/GlobalFishingWatch/pipe-tools/releases/tag/v3.1.0)
+   * Migrates `Apache Beam` from version 2.1.0 to [2.16.0](https://github.com/apache/beam/tree/v2.16.0)
+   * Migrates from pytohn 2 to 3.
+
 ## v1.0.0 - 2019-03-27
 
 ### Added

@@ -1,16 +1,18 @@
-from apache_beam import PTransform
-from apache_beam import Map
-from apache_beam import FlatMap
-from apache_beam import GroupByKey
-import datetime
-import logging
-import math
-from collections import defaultdict
-import itertools as it
-from statistics import median
-from statistics import mean
 from ..objects.encounter import Encounter
 from .compute_adjacency import compute_distance as compute_distance_km
+from apache_beam import FlatMap
+from apache_beam import GroupByKey
+from apache_beam import Map
+from apache_beam import PTransform
+from collections import defaultdict
+from statistics import mean
+from statistics import median
+
+import datetime
+import itertools as it
+import logging
+import math
+import six
 
 MPS_TO_KNOTS = 1.94384
 
@@ -18,7 +20,7 @@ def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = it.tee(iterable)
     next(b, None)
-    return it.izip(a, b)
+    return six.moves.zip(a, b)
 
 
 def implied_speed_mps(rcd1, rcd2):

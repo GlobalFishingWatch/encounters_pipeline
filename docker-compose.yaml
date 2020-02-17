@@ -8,27 +8,26 @@ services:
       - "gcp:/root/.config/"
 
   create_raw_encounters:
-    entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]  
+    entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]
     image: gfw/pipe-encounters
     build: .
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
   merge_encounters:
-    entrypoint: ["python", "-m", "pipeline.merge_encounters"]  
+    entrypoint: ["python", "-m", "pipeline.merge_encounters"]
     image: gfw/pipe-encounters
     build: .
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
   test:
-    entrypoint: ["py.test",  "tests"]  
+    entrypoint: ["py.test",  "tests"]
     image: gfw/pipe-encounters
     build: .
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
-
   bash:
     image: gfw/pipe-encounters
     build: .
@@ -36,8 +35,7 @@ services:
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
-            
+
 volumes:
   gcp:
     external: True
-
