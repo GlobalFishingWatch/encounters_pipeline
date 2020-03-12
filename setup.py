@@ -5,14 +5,14 @@ import codecs
 
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '2.0.0'
+PROJECT_VERSION = '3.0.0'
 PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
-    "ujson",
+    "ujson==1.35",
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==3.1.0",
+    "pipe-tools==3.1.1",
     "jinja2-cli",
     "six>=1.13",
     "cython"
