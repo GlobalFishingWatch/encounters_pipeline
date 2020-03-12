@@ -8,7 +8,19 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.0 - 2020-03-12
+
+### Changed
+
+* [GlobalFishingWatch/gfw-eng-tasks#31](https://github.com/GlobalFishingWatch/gfw-eng-tasks/issues/31): Changes
+   pin `ujson` lib to `1.35` and `pipe-tools:v3.1.1`.
+   Dockerfile update just needed lines.
+
 ### Added
+
+* [GlobalFishingWatch/gfw-eng-tasks#29](https://github.com/GlobalFishingWatch/gfw-eng-tasks/issues/29): Adds
+    `dist_to_port_10km.pickle` file having the new raster.
+
 
 ## v2.0.0 - 2020-01-29
 
