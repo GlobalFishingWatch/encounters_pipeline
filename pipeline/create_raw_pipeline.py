@@ -75,7 +75,7 @@ def create_queries(options):
         dataset = dataset.replace(':', '.')
         start_window = start_of_full_window
         position_table = dataset + '.position_messages_'
-        segment_table = dataset + '.segments_'
+        segment_table = dataset + '.legacy_segment_v1_'
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
             query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
