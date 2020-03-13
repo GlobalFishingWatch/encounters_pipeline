@@ -62,7 +62,7 @@ def build_dag(dag_id, schedule_interval='@daily', extra_default_args=None, extra
 
         segment_table_exists = table_sensor(
             dataset_id='{source_dataset}'.format(**config),
-            table_id='segments_',
+            table_id='legacy_segment_v1_',
             date=source_sensor_date)
 
         python_target = Variable.get('DATAFLOW_WRAPPER_STUB')
