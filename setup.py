@@ -1,12 +1,12 @@
 from pipe_tools.beam.requirements import requirements as DATAFLOW_PINNED_DEPENDENCIES
+
 from setuptools import setup, find_packages
 
 import codecs
 
 
-PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '3.0.1'
-PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
+package = __import__('pipeline')
+
 DEPENDENCIES = [
     "ujson==1.35",
     "statistics",
@@ -22,12 +22,12 @@ with codecs.open('requirements.txt', encoding='utf-8') as f:
     DEPENDENCY_LINKS=[line for line in f]
 
 setup(
-    name=PROJECT_NAME,
-    version=PROJECT_VERSION,
-    description=PROJECT_DESCRIPTION,
-    author="Global Fishing Watch",
-    author_email="info@globalfishingwatch.org",
-    license="Apache 2",
+    name='encounters',
+    version=package.__version__,
+    description=package.__doc__.strip(),
+    author=package.__author__,
+    author_email=package.__email__,
+    license=package.__license__,
     packages=find_packages(),
     include_package_data=True,
     install_requires=DEPENDENCIES + DATAFLOW_PINNED_DEPENDENCIES,

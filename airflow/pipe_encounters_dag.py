@@ -48,6 +48,8 @@ class PipeEncountersDagFactory(DagFactory):
                     max_encounter_dist_km=config['max_encounter_dist_km'],
                     min_encounter_time_minutes=config['min_encounter_time_minutes'],
                     source_dataset='{project_id}:{source_dataset}'.format(**config),
+                    position_messages_table='{position_messages_table}'.format(**config),
+                    segments_table='{segments_table}'.format(**config),
                     raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
                     neighbor_table='{project_id}:{pipeline_dataset}.{neighbor_table}'.format(**config),
                     temp_location='gs://{temp_bucket}/dataflow_temp'.format(**config),
