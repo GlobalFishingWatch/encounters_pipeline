@@ -18,6 +18,7 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     pipeline_dataset="{{ var.value.PIPELINE_DATASET }}" \
     raw_table="raw_encounters_" \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
+    source_tables="position_messages_,legacy_segment_v1_" \
     temp_bucket="{{ var.value.TEMP_BUCKET }}" \
     dataflow_max_num_workers="100" \
     dataflow_disk_size_gb="50"
