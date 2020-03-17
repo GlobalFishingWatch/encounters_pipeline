@@ -112,4 +112,5 @@ class PipeEncountersDagFactory(DagFactory):
 
 
 for mode in ['daily', 'monthly', 'yearly']:
-    encounters_dag = PipeEncountersDagFactory(schedule_interval='@{}'.format(mode)).build('encounters_{}'.format(mode))
+    dag_id='encounters_{}'.format(mode)
+    globals()[dag_id] = PipeEncountersDagFactory(schedule_interval='@{}'.format(mode)).build(dag_id)
