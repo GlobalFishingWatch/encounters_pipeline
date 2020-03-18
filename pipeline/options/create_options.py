@@ -10,14 +10,17 @@ class CreateOptions(PipelineOptions):
         required = parser.add_argument_group('Required')
         optional = parser.add_argument_group('Optional')
 
-        required.add_argument('--source_dataset', required=True, 
-                            action='append', dest='source_datasets',
-                            help='Name of of datset to pull `position_messages_` and `segments_` tables from (BQ)')
-        required.add_argument('--raw_table', required=True, 
+        required.add_argument('--source_dataset', required=True, action='append', dest='source_datasets',
+                            help='Name of of datset to pull position_messages and segments tables from (BQ)')
+        required.add_argument('--position_messages_table', required=True, action='append', dest='position_messages_table',
+                            help='Name of table for `position_messages_`')
+        required.add_argument('--segments_table', required=True, action='append', dest='segments_table',
+                            help='Name of table for `legacy_segments_v1`')
+        required.add_argument('--raw_table', required=True,
                             help='Table to write raw (unmerged) encounters to')
-        required.add_argument('--start_date', required=True, 
-                              help="First date to look for entry/exit events.")
-        required.add_argument('--end_date', required=True, 
+        required.add_argument('--start_date', required=True,
+                            help="First date to look for entry/exit events.")
+        required.add_argument('--end_date', required=True,
                             help="Last date (inclusive) to look for entry/exit events.")
         required.add_argument('--max_encounter_dist_km', required=True, type=float,
                             help="Maximum distance for vessels to be elegible for an encounters")
@@ -30,7 +33,7 @@ class CreateOptions(PipelineOptions):
                                  ' the new data, or WRITE_APPEND to add the new date without. Defaults to WRITE_APPEND.')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        optional.add_argument('--neighbor_table', 
+        optional.add_argument('--neighbor_table',
                             help='Table to write neighbor counts to')
-        optional.add_argument('--vessel_id_column', 
-                              help='value to use in query for extracting vessel_id')
+        optional.add_argument('--vessel_id_column',
+                            help='value to use in query for extracting vessel_id')

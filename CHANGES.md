@@ -8,6 +8,13 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.2 - 2020-03-18
+
+### Added
+
+* [GlobalFishingWatch/gfw-eng-tasks#37](https://github.com/GlobalFishingWatch/gfw-eng-tasks/issues/37): Adds
+   required position_messages and segments table passed as requiered in create_raw_encounters.
+
 ## v3.0.1 - 2020-03-13
 
 ### Changed
