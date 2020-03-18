@@ -2,10 +2,12 @@
 from pipeline.create_raw_pipeline import create_queries
 
 class DummyOptions(object):
-    def __init__(self, start_date, end_date, source_dataset="SOURCE_DATASET"):
+    def __init__(self, start_date, end_date, source_dataset="SOURCE_DATASET", position_messages_table="position_messages_", segments_table="segments_"):
         self.start_date = start_date
         self.end_date = end_date
         self.source_datasets = [source_dataset]
+        self.position_messages_table=position_messages_table
+        self.segments_table=segments_table
         self.fast_test = False
         self.vessel_id_column = None
     def view_as(self, x):

@@ -60,9 +60,9 @@ def create_queries(options):
             )
         GROUP BY 1,2,3,4,5
     """
-    start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d') 
+    start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d')
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
-    end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d') 
+    end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d')
 
     vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
 
@@ -74,8 +74,8 @@ def create_queries(options):
             id_prefix = ''
         dataset = dataset.replace(':', '.')
         start_window = start_of_full_window
-        position_table = dataset + '.position_messages_'
-        segment_table = dataset + '.legacy_segment_v1_'
+        position_table = '{}.{}'.format(dataset,create_options.position_messages_table)
+        segment_table = '{}.{}'.format(dataset, create_options.segments_table)
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
             query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
