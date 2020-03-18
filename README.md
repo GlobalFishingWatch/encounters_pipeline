@@ -64,7 +64,7 @@ Here is a concrete example:
         docker-compose run create_raw_encounters \
                 --source_dataset pipe_staging_a \
                 --position_messages_table position_messages_ \
-                --segments_table segments_ \
+                --segments_table legacy_segments_v1 \
                 --start_date 2017-01-01 \
                 --end_date 2017-12-31 \
                 --max_encounter_dist_km 0.5 \
@@ -104,7 +104,7 @@ be prepended to ids from that source. For example:
                 --source_dataset ais::pipe_production_b \
                 --source_dataset indo_vms::pipe_indo_production_v20180727 \
                 --position_messages_table position_messages_ \
-                --segments_table segments_ \
+                --segments_table legacy_segments_v1 \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
                 --start_date 2015-01-01 \

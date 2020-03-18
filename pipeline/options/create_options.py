@@ -15,7 +15,7 @@ class CreateOptions(PipelineOptions):
         required.add_argument('--position_messages_table', required=True, action='append', dest='position_messages_table',
                             help='Name of table for `position_messages_`')
         required.add_argument('--segments_table', required=True, action='append', dest='segments_table',
-                            help='Name of table for `segments_`')
+                            help='Name of table for `legacy_segments_v1`')
         required.add_argument('--raw_table', required=True,
                             help='Table to write raw (unmerged) encounters to')
         required.add_argument('--start_date', required=True,
