@@ -12,9 +12,9 @@ class CreateOptions(PipelineOptions):
 
         required.add_argument('--source_dataset', required=True, action='append', dest='source_datasets',
                             help='Name of of datset to pull position_messages and segments tables from (BQ)')
-        required.add_argument('--position_messages_table', required=True, action='append', dest='position_messages_table',
+        required.add_argument('--position_messages_table', required=True,
                             help='Name of table for `position_messages_`')
-        required.add_argument('--segments_table', required=True, action='append', dest='segments_table',
+        required.add_argument('--segments_table', required=True,
                             help='Name of table for `legacy_segments_v1`')
         required.add_argument('--raw_table', required=True,
                             help='Table to write raw (unmerged) encounters to')
