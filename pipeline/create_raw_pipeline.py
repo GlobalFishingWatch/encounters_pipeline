@@ -42,29 +42,18 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("{id_prefix}", {vessel_id}) AS id
+      CONCAT("{id_prefix}", {id}) AS id
     FROM
         `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
-        AND lat     IS NOT NULL
-        AND lon     IS NOT NULL
-        AND speed   IS NOT NULL
-        AND seg_id IN (
-                SELECT seg_id
-                    FROM `{segment_table}*`
-                WHERE
-                    _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
-                    AND noise = FALSE
-                GROUP BY seg_id
-            )
-        GROUP BY 1,2,3,4,5
+        not likely_noise
     """
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d')
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d')
 
-    vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
+    id_txt = 'track_id' if (create_options.id_column is None) else create_options.id_column
 
     for dataset in create_options.source_datasets:
         if '::' in dataset:
@@ -79,7 +68,7 @@ def create_queries(options):
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
             query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
-                            start=start_window, end=end_window, vessel_id=vessel_id_txt, min_message_count=2)
+                            start=start_window, end=end_window, id=id_txt, min_message_count=2)
             print(query)
             yield query
             start_window = end_window + datetime.timedelta(days=1)
