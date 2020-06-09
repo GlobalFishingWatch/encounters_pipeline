@@ -47,7 +47,6 @@ def create_queries(options):
         `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
-        not likely_noise
     """
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d')
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
@@ -55,19 +54,17 @@ def create_queries(options):
 
     id_txt = 'track_id' if (create_options.id_column is None) else create_options.id_column
 
-    for dataset in create_options.source_datasets:
-        if '::' in dataset:
-            id_prefix, dataset = dataset.split('::', 1)
+    for table in create_options.source_tables:
+        if '::' in table:
+            id_prefix, table = table.split('::', 1)
             id_prefix += ':'
         else:
             id_prefix = ''
-        dataset = dataset.replace(':', '.')
+        table = table.replace(':', '.')
         start_window = start_of_full_window
-        position_table = '{}.{}'.format(dataset,create_options.position_messages_table)
-        segment_table = '{}.{}'.format(dataset, create_options.segments_table)
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
+            query = template.format(id_prefix=id_prefix, position_table=table, 
                             start=start_window, end=end_window, id=id_txt, min_message_count=2)
             print(query)
             yield query
