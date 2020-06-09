@@ -96,6 +96,3 @@ for en in enc_nums:
 # +
 # rendered.publish_to_github('./InspectTrackIdBasedAnchorages.ipynb', 
 #                            'pipe-encounters/notebooks', action='push')
-# -
-
-
