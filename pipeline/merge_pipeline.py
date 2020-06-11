@@ -10,6 +10,7 @@ from pipeline.objects.encounter import Encounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.filter_inland import FilterInland
 from pipeline.transforms.filter_ports import FilterPorts
+from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.writers import WriteToBq
 
@@ -73,6 +74,7 @@ def run(options):
         | FilterPorts()
         | FilterInland()
         | "FilteredToDicts" >> Encounter.ToDict()
+        | AddEncounterId()
         | "WriteFiltered" >> writer_filtered
     )
 
