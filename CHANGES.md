@@ -8,6 +8,13 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.3 - 2020-06-11
+
+### Added
+
+* [GlobalFishingWatch/gfw-eng-tasks#111](https://github.com/GlobalFishingWatch/gfw-eng-tasks/issues/111): Adds
+  * Pin to `pipe-tools:v3.1.2`.
+
 ## v3.0.2 - 2020-03-18
 
 ### Added
