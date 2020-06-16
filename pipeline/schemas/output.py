@@ -4,6 +4,7 @@ def build():
 
     builder = SchemaBuilder()
 
+    builder.add("encounter_id", "STRING")
     builder.add("start_time", "TIMESTAMP")
     builder.add("end_time", "TIMESTAMP")
     builder.add("mean_latitude", "FLOAT")

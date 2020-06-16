@@ -133,7 +133,7 @@ class TestComputeEncounters(unittest.TestCase):
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
                           -27.480823491781422, 38.53562707753466,
-                          0.030350584066300222,
+                          0.030350584066300215,
                           0.17049202182476167, 4, 5)
         ]
 
@@ -143,7 +143,7 @@ class TestComputeEncounters(unittest.TestCase):
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426759800.0), 
                   ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
-                  ('median_distance_km', 0.030350584066300222), 
+                  ('median_distance_km', 0.030350584066300215), 
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
                   ('vessel_1_id', b'563418000'), 
@@ -165,5 +165,5 @@ class TestComputeEncounters(unittest.TestCase):
                  1426750800.0, 'mean_longitude': 38.534062395386556, 
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
-                 'median_distance_km': 0.029597875050467033, 'vessel_1_point_count': 12, 
+                 'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
                  'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000'}]
