@@ -5,7 +5,9 @@ Encounter = namedtuple("Encounter",
     ["vessel_1_id", "vessel_2_id", "start_time", "end_time", 
      "mean_latitude", "mean_longitude", 
      "median_distance_km", "median_speed_knots", 
-     "vessel_1_point_count", "vessel_2_point_count"])
+     "vessel_1_point_count", "vessel_2_point_count",
+     "start_lat", "start_lon", "end_lat", "end_lon",
+])
 
 
 class EncounterCoder(NamedtupleCoder):

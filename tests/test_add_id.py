@@ -15,6 +15,7 @@ epoch = dt.datetime.utcfromtimestamp(0)
       '0000273eee548f797b78236d2f408a77'),
     ])
 def test_add_id(test_input, expected):
-    encounter_id = add_id.AddEncounterId.add_id(test_input)['encounter_id']
+    adder = add_id.AddEncounterId()
+    encounter_id = adder.add_id(test_input)['encounter_id']
     assert encounter_id == expected
     

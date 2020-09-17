@@ -2,6 +2,7 @@ from apache_beam import PTransform
 from apache_beam import Map
 from apache_beam import FlatMap
 from apache_beam import GroupByKey
+import bisect
 import logging
 import math
 from collections import defaultdict
@@ -32,10 +33,10 @@ def S2CellId(lat, lon):
 
 class ComputeAdjacency(PTransform):
 
-    def __init__(self, max_adjacency_distance_km):
+    def __init__(self, max_adjacency_distance_km, max_tracked_distances=100):
         self.max_adjacency_distance_km = max_adjacency_distance_km
+        self.max_tracked_distances = max_tracked_distances
         assert max_adjacency_distance_km < 2 * APPROX_ENCOUNTERS_S2_SIZE_KM
-
 
     def compute_distances(self, records):
         records = list(records)
@@ -57,39 +58,28 @@ class ComputeAdjacency(PTransform):
                 s2_to_ndxs[tkn].append(i)
 
         for i, (token, rcd1) in enumerate(tagged_records):
-            closest_dist = self.max_adjacency_distance_km
-            closest_nbr = None
-            nbr_count = 0
+            closest_dists = []
+            closest_nbrs = []
             for j in s2_to_ndxs[token]:
                 if i == j:
                     continue
                 rcd2 = records[j]
                 distance = compute_distance(rcd1, rcd2)
                 if distance <= self.max_adjacency_distance_km:
-                    nbr_count += 1
-                    if distance <= closest_dist:
-                        closest_dist = distance
-                        closest_nbr = rcd2
-            if closest_nbr is None:
-                yield (rcd1, None, inf, 0)
-            else:
-                yield (rcd1, closest_nbr, closest_dist, nbr_count)
-
+                    ndx = bisect.bisect_right(closest_dists, distance)
+                    closest_dists.insert(ndx, distance)
+                    closest_nbrs.insert(ndx, rcd2)
+                    if len(closest_dists) > self.max_tracked_distances:
+                        closest_dists = closest_dists[:self.max_tracked_distances]
+                        closest_nbrs = closest_nbrs[:self.max_tracked_distances]
+            yield (rcd1, closest_nbrs, closest_dists)
 
     def annotate_adjacency(self, resampled_item):
         time, records = resampled_item
-        for rcd1, rcd2, distance, count in self.compute_distances(records):
-            if distance <= self.max_adjacency_distance_km:
-                yield AnnotatedRecord(neighbor_count = count, 
-                                                 closest_neighbor = rcd2, 
-                                                 closest_distance = distance,
-                                                 **rcd1._asdict())
-            else:
-                yield AnnotatedRecord(neighbor_count = 0, 
-                                                 closest_neighbor = None, 
-                                                 closest_distance = inf,
-                                                 **rcd1._asdict())
-
+        for rcd1, neighbors, distances in self.compute_distances(records):
+            yield AnnotatedRecord(closest_neighbors = neighbors, 
+                                  closest_distances = distances,
+                                  **rcd1._asdict())
 
     def tag_with_time(self, item):
         return (item.timestamp, item)

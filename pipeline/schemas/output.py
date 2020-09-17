@@ -11,6 +11,10 @@ def build():
     builder.add("mean_longitude", "FLOAT")
     builder.add("median_distance_km", "FLOAT")
     builder.add("median_speed_knots", "FLOAT")
+    builder.add("start_lat", "FLOAT")
+    builder.add("start_lon", "FLOAT")
+    builder.add("end_lat", "FLOAT")
+    builder.add("end_lon", "FLOAT")
 
     for v in [1, 2]:
         builder.add("vessel_{}_id".format(v), "STRING")
