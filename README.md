@@ -43,28 +43,28 @@ instructions there.
 
 In incremental mode, the form of the command is
 
-        docker-compose run pipeline \
-                --source_dataset SOURCE_DATASET \
+        docker-compose run create_raw_encounters \
+                --source_table SOURCE_TABLE \
                 --start_date DATE \
                 --end_date DATE \
                 --max_encounter_dist_km DISTANCE \
                 --min_encounter_time_minutes TIME \
-                --raw_sink RAW_TABLE \
-                --sink FINAL_TABLE \
-                remote \
+                --raw_table RAW_TABLE \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-pip \
-                --max_num_workers 200
+                --max_num_workers 200 \
+                --setup_file ./setup.py \
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100
 
 Note that raw_table needs to be persistent since it is appended to with each run.
 Here is a concrete example:
 
 
         docker-compose run create_raw_encounters \
-                --source_dataset pipe_staging_a \
-                --position_messages_table position_messages_ \
-                --segments_table legacy_segments_v1 \
+                --source_table pipe_staging_a.position_messages_ \
                 --start_date 2017-01-01 \
                 --end_date 2017-12-31 \
                 --max_encounter_dist_km 0.5 \
@@ -101,10 +101,8 @@ It's also possible to specify multiple source tables. The tables can be optional
 be prepended to ids from that source. For example:
 
         docker-compose run create_raw_encounters \
-                --source_dataset ais::pipe_production_b \
-                --source_dataset indo_vms::pipe_indo_production_v20180727 \
-                --position_messages_table position_messages_ \
-                --segments_table legacy_segments_v1 \
+                --source_table ais::pipe_production_b.position_messages_ \
+                --source_table indo_vms::pipe_indo_production_v20180727:source_table \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
                 --start_date 2015-01-01 \

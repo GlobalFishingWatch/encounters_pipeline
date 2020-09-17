@@ -37,68 +37,80 @@ class ComputeEncounters(PTransform):
         self.min_minutes_for_encounter = min_minutes_for_encounter
         self.max_km_for_encounter = max_km_for_encounter
 
+    def _try_to_create_encounter(self, adjacency_run):
+        if len(adjacency_run) < 2:
+            return
+
+        start_time = adjacency_run[0][0].timestamp
+        end_time = adjacency_run[-1][0].timestamp
+        encounter_duration = end_time - start_time
+
+        if encounter_duration < datetime.timedelta(minutes=self.min_minutes_for_encounter):
+            return
+
+        implied_speeds = [implied_speed_mps(rcd1a, rcd1b) for 
+                        ((rcd1a, rcd2a, dista), (rcd1b, rcd2b, distb)) in pairwise(adjacency_run)]
+
+
+        median_distance_km = median(dist for (rcd1, rcd2, dist) in adjacency_run)
+        mean_lat = mean(rcd1.lat for (rcd1, rcd2, dist) in adjacency_run)
+        mean_lon = mean(rcd1.lon for (rcd1, rcd2, dist) in adjacency_run)
+        median_speed_knots = median(implied_speeds) * MPS_TO_KNOTS
+
+        vessel_1_points = int(round(sum(rcd1.point_density for (rcd1, rcd2, dist) in adjacency_run)))
+        vessel_2_points = int(round(sum(rcd2.point_density for (rcd1, rcd2, dist) in adjacency_run)))
+
+        rcd1, rcd2, _ = adjacency_run[0]
+        yield Encounter(rcd1.id,
+                        rcd2.id,
+                        start_time,
+                        end_time,
+                        mean_lat,
+                        mean_lon,
+                        median_distance_km,
+                        median_speed_knots,
+                        vessel_1_points,
+                        vessel_2_points,
+                        start_lat = rcd1.lat, 
+                        start_lon = rcd1.lon, 
+                        end_lat = adjacency_run[-1][0].lat, 
+                        end_lon = adjacency_run[-1][0].lon,
+                        )
+
+    def _create_valid_encounters(self, adjacency_runs, active_ids):
+        removal_list = []
+        for k, v in adjacency_runs.items():
+            if k not in active_ids:
+                removal_list.append(k)
+                yield from self._try_to_create_encounter(v) 
+        for k in removal_list:
+            del adjacency_runs[k]
 
     def compute_encounters(self, item):
+        """Create encounters for one vessel
 
+        Parameters
+        ==========
+        item : (str, sequence of AnnotatedRecord)
+            A tuple of the vessel id and the associated annotated records
+
+        Yields
+        ======
+        Encounter
+        """
         vessel_id, records = item
+        adjacency_runs = defaultdict(list)
 
-        def try_adding_encounter_vessel():
-            if (current_encounter_id is not None) and (len(current_run) >= 2):
-                start_time = current_run[0].timestamp
-                end_time = current_run[-1].timestamp
-                encounter_duration = end_time - start_time
+        for rcd1 in records:
+            active_ids = set()
+            for ndx, rcd2 in enumerate(rcd1.closest_neighbors):
+                distance = rcd1.closest_distances[ndx]
+                if distance <= self.max_km_for_encounter:
+                    adjacency_runs[rcd2.id].append((rcd1, rcd2, distance))
+                    active_ids.add(rcd2.id)
+            yield from self._create_valid_encounters(adjacency_runs, active_ids)
+        yield from self._create_valid_encounters(adjacency_runs, set())
 
-                if encounter_duration >= datetime.timedelta(minutes=self.min_minutes_for_encounter):
-                    implied_speeds = [implied_speed_mps(ar1, ar2) for 
-                                                (ar1, ar2) in pairwise(current_run)]
-
-                    median_distance_km = median(x.closest_distance for x in current_run)
-                    mean_lat = mean(x.lat for x in current_run)
-                    mean_lon = mean(x.lon for x in current_run)
-                    median_speed_knots = median(implied_speeds) * MPS_TO_KNOTS
-
-                    vessel_1_points = int(round(sum(x.point_density for x in current_run)))
-                    vessel_2_points = int(round(sum(x.closest_neighbor.point_density for x in current_run)))
-
-                    key = (vessel_id, current_encounter_id)
-
-                    encounters[key].append(
-                              Encounter(vessel_id,
-                                        current_encounter_id,
-                                        start_time,
-                                        end_time,
-                                        mean_lat,
-                                        mean_lon,
-                                        median_distance_km,
-                                        median_speed_knots,
-                                        vessel_1_points,
-                                        vessel_2_points))
-            current_run[:] = []
-
-
-        encounters = defaultdict(list)
-
-        current_encounter_id = None
-        current_run = []
-
-        for l in records:
-            is_possible_encounter_pt = (l.closest_distance <= self.max_km_for_encounter)
-
-            if is_possible_encounter_pt:
-                closest_id = l.closest_neighbor.id
-                if current_encounter_id not in (None, closest_id):
-                    try_adding_encounter_vessel()
-                    current_encounter_id = closest_id
-                else:
-                    current_run.append(l)
-                current_encounter_id = closest_id
-            else:
-                try_adding_encounter_vessel()
-                current_encounter_id = None
-
-        try_adding_encounter_vessel()
-
-        return [x for (key, value) in encounters.items() for x in value]
 
     def tag_with_id(self, item):
         return (item.id, item)

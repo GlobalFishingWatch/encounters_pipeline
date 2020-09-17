@@ -34,7 +34,6 @@ inf = float('inf')
 def ts(x):
     return datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc)
 
-
 def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
     if closest_neighbor is None:
         nbr_dist = inf
@@ -42,10 +41,14 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
         nbr_id, nbr_dist, nbr_args = closest_neighbor
         closest_neighbor = ResampledRecord(*nbr_args, id=nbr_id)
     record = record._replace(id=vessel_id)
-    return (vessel_id,
-        compute_adjacency.AnnotatedRecord(neighbor_count=neighbor_count, closest_distance=nbr_dist,
-            record=record, closest_neighbor=closest_neighbor)
-        )
+    if np.isinf(nbr_dist):
+        closest_neighbors = []
+        closest_distances = []
+    else:
+        closest_neighbors = [closest_neighbor]
+        closest_distances = [nbr_dist]
+    return compute_adjacency.AnnotatedRecord(closest_distances=closest_distances,
+            closest_neighbors=closest_neighbors, **record._asdict())
 
 
 @pytest.mark.filterwarnings('ignore:Using fallback coder:UserWarning')
@@ -110,13 +113,17 @@ class TestComputeEncounters(unittest.TestCase):
                         ts("2011-01-01T17:00:00Z"),
                         -1.4719963, 55.21973783333333,
                         0.20333088100150815,
-                        0.6467305031568592, 6, 5),
+                        0.6467305031568592, 6, 5, 
+                        start_lat=-1.4719963, start_lon=55.2251069, 
+                        end_lat=-1.4725113, end_lon=55.2156088),
                     encounter.Encounter(b'2', b'1',
                         ts("2011-01-01T16:10:00Z"),
                         ts("2011-01-01T17:00:00Z"),
                         -1.4710235833333334, 55.21933776666667,
                         0.20333088100150815,
-                        1.1175558891689739, 5, 6)
+                        1.1175558891689739, 5, 6, 
+                        start_lat=-1.471138, start_lon=55.2267713, 
+                        end_lat=-1.4728546, end_lon=55.2116913)
         ]
 
 
@@ -128,13 +135,17 @@ class TestComputeEncounters(unittest.TestCase):
                           ts("2015-03-19T20:10:00Z"),
                           -27.47909444042379, 38.53374945895693,
                           0.028845166034633843,
-                          0.20569554161530468, 7, 6),
+                          0.20569554161530468, 7, 6, 
+                          start_lat=-27.48458079902857, start_lon=38.5362468641449, 
+                          end_lat=-27.464933395399996, end_lon=38.52257468481818),
             encounter.Encounter(b'563418000', b'441910000',
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
                           -27.480823491781422, 38.53562707753466,
                           0.030350584066300215,
-                          0.17049202182476167, 4, 5)
+                          0.17049202182476167, 4, 5, 
+                          start_lat=-27.484518051171428, start_lon=38.53651973177143, 
+                          end_lat=-27.475459163642533, end_lon=38.53207037113999)
         ]
 
 
@@ -147,7 +158,11 @@ class TestComputeEncounters(unittest.TestCase):
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
                   ('vessel_1_id', b'563418000'), 
-                  ('vessel_2_id', b'441910000')]), 
+                  ('vessel_2_id', b'441910000'),
+                  ('start_lat', -27.484518051171428), 
+                  ('start_lon', 38.53651973177143), 
+                  ('end_lat', -27.475459163642533), 
+                  ('end_lon', 38.53207037113999)]), 
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426795800.0), 
                   ('mean_latitude', -27.47909444042379), 
@@ -156,7 +171,11 @@ class TestComputeEncounters(unittest.TestCase):
                   ('median_speed_knots', 0.20569554161530468), 
                   ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
                   ('vessel_1_id', b'441910000'), 
-                  ('vessel_2_id', b'563418000')])] 
+                  ('vessel_2_id', b'563418000'),
+                  ('start_lat', -27.48458079902857), 
+                  ('start_lon', 38.5362468641449), 
+                  ('end_lat', -27.464933395399996), 
+                  ('end_lon', 38.52257468481818)])][::-1]
 
 
 
@@ -166,4 +185,7 @@ class TestComputeEncounters(unittest.TestCase):
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
                  'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
-                 'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000'}]
+                 'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000',
+                 'start_lat' : -27.48458079902857,
+                 'start_lon' : 38.5362468641449, 'end_lat' : -27.475459163642533, 
+                 'end_lon': 38.53207037113999}]

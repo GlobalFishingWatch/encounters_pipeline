@@ -12,8 +12,8 @@ from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.encounter import Encounter
 from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
-from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 from pipeline.schemas.output import build as output_build_schema
+from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
@@ -103,28 +103,14 @@ def run(options):
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
-        )
-
-    (adjacencies
         | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
                             min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | Encounter.ToDict()
+        | AddEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | writer
     )
-
-    if create_options.neighbor_table:
-        (adjacencies
-            | CreateTimestampedAdjacencies(start_date, end_date)
-            | "WriteNeighbors" >> WriteToBigQueryDatePartitioned(
-                temp_gcs_location=cloud_options.temp_location,
-                table=create_options.neighbor_table,
-                write_disposition="WRITE_TRUNCATE",
-                schema=nbr_count_build_schema(),
-                project=cloud_options.project
-                )
-            )
 
     result = p.run()
 

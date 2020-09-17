@@ -1,6 +1,7 @@
 import pytest
 import unittest
 import logging
+import numpy as np
 from collections import namedtuple
 
 import apache_beam as beam
@@ -29,8 +30,14 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
         nbr_id, nbr_dist, nbr_args = closest_neighbor
         closest_neighbor = ResampledRecord(*nbr_args, id=nbr_id)
     record = record._replace(id=vessel_id)
-    return compute_adjacency.AnnotatedRecord(neighbor_count=neighbor_count, closest_distance=nbr_dist,
-            closest_neighbor=closest_neighbor, **record._asdict())
+    if np.isinf(nbr_dist):
+        closest_neighbors = []
+        closest_distances = []
+    else:
+        closest_neighbors = [closest_neighbor]
+        closest_distances = [nbr_dist]
+    return compute_adjacency.AnnotatedRecord(closest_distances=closest_distances,
+            closest_neighbors=closest_neighbors, **record._asdict())
 
 
 @pytest.mark.filterwarnings('ignore:Using fallback coder:UserWarning')

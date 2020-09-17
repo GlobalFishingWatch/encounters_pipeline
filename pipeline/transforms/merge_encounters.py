@@ -32,6 +32,8 @@ class MergeEncounters(PTransform):
     def encounter_from_records(self, id_1, id_2, records):
         total_seconds = max(sum((env.end_time - env.start_time).total_seconds() 
                                     for (env, p1, p2) in records), 1)
+        start_enc, _, _ = records[0]
+        end_enc = min(records, key=lambda x : x[0].end_time)[0]
         return Encounter(
             vessel_1_id = id_1,
             vessel_2_id = id_2,
@@ -48,6 +50,10 @@ class MergeEncounters(PTransform):
             # These points correspond to key_id_?, not id_?
             vessel_1_point_count = sum(p1 for (env, p1, p2) in records),
             vessel_2_point_count = sum(p2 for (env, p1, p2) in records),
+            start_lat = start_enc.start_lat,
+            start_lon = start_enc.start_lon,
+            end_lat = end_enc.end_lat,
+            end_lon = end_enc.end_lon
         )
 
     def merge_encounters(self, item):
