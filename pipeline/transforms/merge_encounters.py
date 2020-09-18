@@ -53,7 +53,7 @@ class MergeEncounters(PTransform):
     def merge_encounters(self, item):
         (key_id_1, key_id_2), encounters = item
         encounters = list(encounters)
-        encounters.sort(key=lambda x: x.start_time)
+        encounters.sort(key=lambda x: (x.start_time, x.end_time, x.vessel_1_id, x.vessel_2_id))
         end = epoch
         records = None
         for enc in encounters:
@@ -64,8 +64,7 @@ class MergeEncounters(PTransform):
             if id1 == key_id_2:
                 v1_pts, v2_pts = v2_pts, v1_pts 
             rcd = (enc, v1_pts, v2_pts)
-            # Records are ordered by start time. 
-            #
+            # Records are ordered by start time, end_time and vessel_ids.
             if enc.start_time - end >= datetime.timedelta(hours=self.min_hours_between_encounters):
                 if records:
                     yield self.encounter_from_records(key_id_1, key_id_2, records)
@@ -82,6 +81,6 @@ class MergeEncounters(PTransform):
             xs
             | Map(self.key_by_ordered_mmsi).with_output_types(
                 beam.typehints.Tuple[beam.typehints.Tuple[six.binary_type, six.binary_type], T])
-            | "Group by Orderred MMSI" >> GroupByKey()
+            | "Group by Ordered MMSI" >> GroupByKey()
             | FlatMap(self.merge_encounters)
         )
