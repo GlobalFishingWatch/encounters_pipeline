@@ -119,8 +119,62 @@ fs_path_2 = [
     ResampledRecord("2011-01-01 17:50:00 UTC", 0.0, 0.0, id='2')
 ]
 
-fastset_series_data = fs_path_1 + fs_path_2
+fastsep_series_data = fs_path_1 + fs_path_2
 
+
+multi_path_1 = [
+    ResampledRecord("2011-01-01 15:40:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:10:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:20:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", 0.0, 0.0, id='1')
+]
+
+multi_path_2 = [
+    ResampledRecord("2011-01-01 15:20:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 15:30:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 15:40:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:10:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", 0.0, 0.001, id='2'),
+    ResampledRecord("2011-01-01 17:50:00 UTC", 0.0, 0.001, id='2')
+]
+
+multi_path_3 = [
+    ResampledRecord("2011-01-01 15:20:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 15:30:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 15:40:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 16:10:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", 0.0, 0.001, id='3'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", 0.0, 0.0,   id='3'),
+    ResampledRecord("2011-01-01 17:50:00 UTC", 0.0, 0.0,   id='3')
+]
+
+multi_series_data = multi_path_1 + multi_path_2 + multi_path_3
 
 
 def text_to_records(vessel_id, text):

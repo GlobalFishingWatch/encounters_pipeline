@@ -14,11 +14,12 @@ from apache_beam.testing.util import equal_to
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
-from .series_data import simple_series_data, dateline_series_data, fastset_series_data
+from .series_data import simple_series_data, dateline_series_data, fastsep_series_data, multi_series_data
 from .series_data import real_series_data
 
 from pipeline.create_raw_pipeline import ensure_bytes_id
 from pipeline.transforms.resample import Resample
+from pipeline.transforms import compute_adjacency 
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.objects import encounter
@@ -68,6 +69,32 @@ class TestComputeEncounters(unittest.TestCase):
             )
             assert_that(results, equal_to(self._get_simple_expected()))
 
+    def test_multi_encounters(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(multi_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to(self._get_multi_expected()))
+
+
+    def test_nerfed_multi_encounters(self):
+        """If we reduce the number of tracked distances we shouldn't get all of the encounters"""
+        with _TestPipeline() as p:
+                results = (
+                    p
+                    | beam.Create(multi_series_data)
+                    | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                    | Resample(increment_s=60*10, max_gap_s=60*70)
+                    | ComputeAdjacency(max_adjacency_distance_km=1.0, max_tracked_distances=1) 
+                    | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                )
+                assert_that(results, equal_to(self._get_nerfed_multi_expected()))
+
     def test_dateline_encounters(self):
         with _TestPipeline() as p:
             results = (
@@ -80,13 +107,18 @@ class TestComputeEncounters(unittest.TestCase):
             )
             assert_that(results, equal_to(self._get_dateline_expected()))
 
-    def test_fastset_encounters(self):
-        """When vessels move apart then back together later rapidly, 
-        then can trigger anomalous encounters"""
+    def test_fastsep_encounters(self):
+        """Make sure false encounters aren't generated when vessels move rapidly
+
+        There's a possible corner case where vessels that move apart rapidly are invisible
+        while they are far apart. If they then move back together quickly a false, or overly
+        extended encounter could be generated. However the current algorithm is not vulnerable
+        to this.
+        """
         with _TestPipeline() as p:
             results = (
                 p
-                | beam.Create(fastset_series_data)
+                | beam.Create(fastsep_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
@@ -188,6 +220,78 @@ class TestComputeEncounters(unittest.TestCase):
             vessel_1_point_count=6, vessel_2_point_count=7,
             start_lat=-1.471138, start_lon=-179.9993, 
             end_lat=-1.4718246, end_lon=-179.999)]
+
+
+    def _get_multi_expected(self):
+        return [
+            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'2', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
+                vessel_1_point_count=13, vessel_2_point_count=12, start_lat=0.0, 
+                start_lon=0.0, end_lat=0.0, end_lon=0.0), 
+            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'3', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.11119492664455874,
+                 median_speed_knots=0.0, vessel_1_point_count=13, vessel_2_point_count=12, 
+                 start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.0), 
+            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.00046153846153749106, 
+                median_distance_km=0.0, median_speed_knots=0.0, vessel_1_point_count=12, 
+                vessel_2_point_count=13, start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.001), 
+            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'3', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 20, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 50, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.0004374999999984383, 
+                median_distance_km=0.11119492664455874, median_speed_knots=0.0, 
+                vessel_1_point_count=15, vessel_2_point_count=15, start_lat=0.0, start_lon=0.0, 
+                end_lat=0.0, end_lon=0.001), 
+            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'1', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), mean_latitude=0.0, 
+                mean_longitude=0.000538461538462509, median_distance_km=0.11119492664455874, 
+                median_speed_knots=0.0, vessel_1_point_count=12, vessel_2_point_count=13, 
+                start_lat=0.0, start_lon=0.001, end_lat=0.0, end_lon=0.0), 
+            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'2', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 20, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 50, tzinfo=pytz.UTC), mean_latitude=0.0, 
+                mean_longitude=0.0005625000000015619, median_distance_km=0.11119492664455874, 
+                median_speed_knots=0.0, vessel_1_point_count=15, vessel_2_point_count=15, 
+                start_lat=0.0, start_lon=0.001, end_lat=0.0, end_lon=0.0)
+        ]
+
+
+    def _get_nerfed_multi_expected(self):
+        return [
+            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'2', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 16, 40, tzinfo=pytz.UTC),
+                mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
+                vessel_1_point_count=7, vessel_2_point_count=6, start_lat=0.0, 
+                start_lon=0.0, end_lat=0.0, end_lon=0.0), 
+            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'3', 
+                start_time=datetime.datetime(2011, 1, 1, 16, 50, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
+                vessel_1_point_count=6, vessel_2_point_count=6, start_lat=0.0, 
+                start_lon=0.0, end_lat=0.0, end_lon=0.0), 
+            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
+                mean_latitude=0.0, mean_longitude=0.00046153846153749106, 
+                median_distance_km=0.0, median_speed_knots=0.0, vessel_1_point_count=12, 
+                vessel_2_point_count=13, start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.001), 
+            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'1', 
+                start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
+                end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), mean_latitude=0.0, 
+                mean_longitude=0.000538461538462509, median_distance_km=0.11119492664455874, 
+                median_speed_knots=0.0, vessel_1_point_count=12, vessel_2_point_count=13, 
+                start_lat=0.0, start_lon=0.001, end_lat=0.0, end_lon=0.0)
+            ]
+
 
 
     def _get_real_expected(self):
