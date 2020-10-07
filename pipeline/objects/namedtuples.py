@@ -72,7 +72,7 @@ class NamedtupleCoder(beam.coders.Coder):
             """converts namedtuple to a dict"""
 
             def to_dict(self, x):
-                return dict(cls._encode(x)._asdict())
+                return cls._encode(x)._asdict()
 
             def expand(self, p):
                 return p | beam.Map(self.to_dict)
