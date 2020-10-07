@@ -14,7 +14,7 @@ from apache_beam.testing.util import equal_to
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
-from .series_data import simple_series_data, dateline_series_data
+from .series_data import simple_series_data, dateline_series_data, fastset_series_data
 from .series_data import real_series_data
 
 from pipeline.create_raw_pipeline import ensure_bytes_id
@@ -77,6 +77,19 @@ class TestComputeEncounters(unittest.TestCase):
             )
             assert_that(results, equal_to(self._get_dateline_expected()))
 
+    def test_fastset_encounters(self):
+        """When vessels move apart then back together later rapidly, 
+        then can trigger anomalous encounters"""
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(fastset_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to([]))
 
     def test_real_data(self):
         with _TestPipeline() as p:

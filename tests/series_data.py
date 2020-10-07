@@ -47,7 +47,7 @@ dl_path_1 = [
     ResampledRecord("2011-01-01 15:40:00 UTC", -1.5032387, 179.999, id='1'),
     ResampledRecord("2011-01-01 15:50:00 UTC", -1.4869308, 179.999, id='1'),
     ResampledRecord("2011-01-01 16:00:00 UTC", -1.4752579, 179.999, id='1'),
-    # Encounter start.
+    # ~Encounter start.
     ResampledRecord("2011-01-01 16:10:00 UTC", -1.4719963, 179.999, id='1'),
     ResampledRecord("2011-01-01 16:20:00 UTC", -1.471653, 179.999, id='1'),
     ResampledRecord("2011-01-01 16:30:00 UTC", -1.4718246, 179.999, id='1'),
@@ -55,7 +55,7 @@ dl_path_1 = [
     ResampledRecord("2011-01-01 16:50:00 UTC", -1.4718246, 179.999, id='1'),
     ResampledRecord("2011-01-01 17:00:00 UTC", -1.4725113, 179.999, id='1'),
     ResampledRecord("2011-01-01 17:10:00 UTC", -1.4730263, 179.999, id='1'),
-    # Encounter end.
+    # ~Encounter end.
     ResampledRecord("2011-01-01 17:20:00 UTC", -1.4859009, 179.999, id='1'),
     ResampledRecord("2011-01-01 17:30:00 UTC", -1.4974022, 179.999, id='1'),
     ResampledRecord("2011-01-01 17:40:00 UTC", -1.5140533, 179.999, id='1')
@@ -67,13 +67,13 @@ dl_path_2 = [
     ResampledRecord("2011-01-01 15:40:00 UTC", -1.4467621, -179.9992, id='2'),
     ResampledRecord("2011-01-01 15:50:00 UTC", -1.4623833, -179.9999, id='2'),
     ResampledRecord("2011-01-01 16:00:00 UTC", -1.469593,  -179.9994, id='2'),
-    # Encounter start.
+    # ~Encounter start.
     ResampledRecord("2011-01-01 16:10:00 UTC", -1.471138,  -179.9993, id='2'),
     ResampledRecord("2011-01-01 16:30:00 UTC", -1.4704514, -179.9999, id='2'),
     ResampledRecord("2011-01-01 16:40:00 UTC", -1.4704514, -179.999, id='2'),
     ResampledRecord("2011-01-01 16:50:00 UTC", -1.4704514, -179.999, id='2'),
     ResampledRecord("2011-01-01 17:00:00 UTC", -1.4728546, -179.9993, id='2'),
-    # Encounter end.
+    # ~Encounter end.
     ResampledRecord("2011-01-01 17:10:00 UTC", -1.4718246, -179.999, id='2'),
     ResampledRecord("2011-01-01 17:20:00 UTC", -1.4474487, -179.995, id='2'),
     ResampledRecord("2011-01-01 17:30:00 UTC", -1.4278793, -179.992, id='2'),
@@ -82,6 +82,45 @@ dl_path_2 = [
 ]
 
 dateline_series_data = dl_path_1 + dl_path_2
+
+
+
+fs_path_1 = [
+    ResampledRecord("2011-01-01 15:40:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:10:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:20:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", 0.0, 0.0, id='1'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", 0.0, 0.0, id='1')
+]
+
+fs_path_2 = [
+    ResampledRecord("2011-01-01 15:20:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 15:30:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 15:40:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 15:50:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 16:00:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 16:10:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 16:30:00 UTC", 0.0, 0., id='2'),
+    ResampledRecord("2011-01-01 16:40:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 16:50:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 17:00:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 17:10:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 17:20:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 17:30:00 UTC", 0.0, 0.0, id='2'),
+    ResampledRecord("2011-01-01 17:40:00 UTC", 0.0, 10., id='2'),
+    ResampledRecord("2011-01-01 17:50:00 UTC", 0.0, 0.0, id='2')
+]
+
+fastset_series_data = fs_path_1 + fs_path_2
+
 
 
 def text_to_records(vessel_id, text):
