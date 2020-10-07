@@ -54,7 +54,9 @@ class ComputeEncounters(PTransform):
 
                     median_distance_km = median(x.closest_distance for x in current_run)
                     mean_lat = mean(x.lat for x in current_run)
-                    mean_lon = mean(x.lon for x in current_run)
+                    cos_lon = mean(math.cos(math.radians(x.lon)) for x in current_run)
+                    sin_lon = mean(math.sin(math.radians(x.lon)) for x in current_run)
+                    mean_lon = math.degrees(math.atan2(sin_lon, cos_lon))
                     median_speed_knots = median(implied_speeds) * MPS_TO_KNOTS
 
                     vessel_1_points = int(round(sum(x.point_density for x in current_run)))
