@@ -29,7 +29,5 @@ class CreateOptions(PipelineOptions):
                                  ' the new data, or WRITE_APPEND to add the new date without. Defaults to WRITE_APPEND.')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        optional.add_argument('--neighbor_table',
-                            help='Table to write neighbor counts to')
         optional.add_argument('--id_column',
                             help='value to use in query for extracting id, defaults to `track_id`')
