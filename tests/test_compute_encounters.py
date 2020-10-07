@@ -8,8 +8,6 @@ from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
 
-from collections import OrderedDict
-from collections import namedtuple
 
 from pipe_tools.utils import approx_equal_to as equal_to
 
@@ -24,7 +22,6 @@ import apache_beam as beam
 import datetime
 import logging
 import pytest
-import pytz
 import pytz
 import unittest
 
@@ -189,29 +186,15 @@ class TestComputeEncounters(unittest.TestCase):
             encounter.Encounter(b'563418000', b'441910000',
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
-                          -27.480823491781422, 38.53562707753466,
+                          -27.480823491781422, 38.53562707753488,
                           0.030350584066300215,
-                          0.17049202182476167, 4, 5, 
-                          start_lat=-27.484518051171428, start_lon=38.53651973177143, 
-                          end_lat=-27.475459163642533, end_lon=38.53207037113999)
+                          0.17049202182476167, 4, 5)
         ]
 
 
     def _get_messages_expected(self):
         return [
-            dict([('start_time', 1426750800.0), 
-                  ('end_time', 1426759800.0), 
-                  ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
-                  ('median_distance_km', 0.030350584066300215), 
-                  ('median_speed_knots', 0.17049202182476167), 
-                  ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
-                  ('vessel_1_id', b'563418000'), 
-                  ('vessel_2_id', b'441910000'),
-                  ('start_lat', -27.484518051171428), 
-                  ('start_lon', 38.53651973177143), 
-                  ('end_lat', -27.475459163642533), 
-                  ('end_lon', 38.53207037113999)]), 
-            dict([('start_time', 1426750800.0), 
+          dict([('start_time', 1426750800.0), 
                   ('end_time', 1426795800.0), 
                   ('mean_latitude', -27.47909444042379), 
                   ('mean_longitude', 38.533749458969304), 
@@ -219,13 +202,16 @@ class TestComputeEncounters(unittest.TestCase):
                   ('median_speed_knots', 0.20569554161530468), 
                   ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
                   ('vessel_1_id', b'441910000'), 
-                  ('vessel_2_id', b'563418000'),
-                  ('start_lat', -27.48458079902857), 
-                  ('start_lon', 38.5362468641449), 
-                  ('end_lat', -27.464933395399996), 
-                  ('end_lon', 38.52257468481818)])][::-1]
-
-
+                  ('vessel_2_id', b'563418000')]),
+            dict([('start_time', 1426750800.0), 
+                  ('end_time', 1426759800.0), 
+                  ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753488), 
+                  ('median_distance_km', 0.030350584066300215), 
+                  ('median_speed_knots', 0.17049202182476167), 
+                  ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
+                  ('vessel_1_id', b'563418000'), 
+                  ('vessel_2_id', b'441910000')]), 
+            ] 
 
     def _get_merged_expected(self):
         return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
@@ -233,7 +219,14 @@ class TestComputeEncounters(unittest.TestCase):
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
                  'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
-                 'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000',
-                 'start_lat' : -27.48458079902857,
-                 'start_lon' : 38.5362468641449, 'end_lat' : -27.475459163642533, 
-                 'end_lon': 38.53207037113999}]
+                 'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000'}]
+
+
+    def _get_merged_dateline_expected(self):
+        return [{'vessel_1_id': b'1', 'vessel_2_id': b'2', 'start_time': 1293898200.0, 
+             'end_time': 1293901800.0, 'mean_latitude': -1.4716407285714286, 
+             'mean_longitude': 179.99984999999998,
+             'median_distance_km': 0.21170220169329662, 
+             'median_speed_knots': 0.18393498586650497, 
+             'vessel_1_point_count': 14, 'vessel_2_point_count': 12}] 
+
