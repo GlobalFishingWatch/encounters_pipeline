@@ -8,6 +8,17 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.4 - 2020-09-18
+
+### Changed
+
+* [Data Pipeline/PIPELINE-106](https://globalfishingwatch.atlassian.net/browse/PIPELINE-106): Changes
+  * Successive runs of merge_encounters on the same data can give slightly
+  * different result.  The culprit turned out to be that sorting the incoming
+  * raw_encounters by start_time alone was not completely stable since there
+  * could by ties in start time. The solution was to stabilize the search by
+  * including the end time and vessel_ids as secondary keys.
+
 ## v3.0.3 - 2020-06-11
 
 ### Added

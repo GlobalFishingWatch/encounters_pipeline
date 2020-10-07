@@ -14,7 +14,7 @@ from apache_beam.testing.util import equal_to
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
-from .series_data import simple_series_data
+from .series_data import simple_series_data, dateline_series_data, fastset_series_data
 from .series_data import real_series_data
 
 from pipeline.create_raw_pipeline import ensure_bytes_id
@@ -23,6 +23,7 @@ from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.objects import encounter
 from pipeline.transforms.merge_encounters import MergeEncounters
+import pytz
 
 
 logger = logging.getLogger()
@@ -67,6 +68,32 @@ class TestComputeEncounters(unittest.TestCase):
             )
             assert_that(results, equal_to(self._get_simple_expected()))
 
+    def test_dateline_encounters(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(dateline_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to(self._get_dateline_expected()))
+
+    def test_fastset_encounters(self):
+        """When vessels move apart then back together later rapidly, 
+        then can trigger anomalous encounters"""
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(fastset_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+            )
+            assert_that(results, equal_to([]))
+
     def test_real_data(self):
         with _TestPipeline() as p:
             results = (
@@ -106,12 +133,26 @@ class TestComputeEncounters(unittest.TestCase):
             )
             assert_that(results, equal_to(self._get_merged_expected()))
 
+    def test_merge_dateline(self):
+        with _TestPipeline() as p:
+            results = (
+                p
+                | beam.Create(dateline_series_data)
+                | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0) 
+                | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                | MergeEncounters(min_hours_between_encounters=24)
+                | encounter.Encounter.ToDict()
+            )
+            assert_that(results, equal_to(self._get_merged_dateline_expected()))
+
     def _get_simple_expected(self):
         return [
                     encounter.Encounter(b'1', b'2',
                         ts("2011-01-01T16:10:00Z"),
                         ts("2011-01-01T17:00:00Z"),
-                        -1.4719963, 55.21973783333333,
+                        -1.4719963, 55.21973783333268,
                         0.20333088100150815,
                         0.6467305031568592, 6, 5, 
                         start_lat=-1.4719963, start_lon=55.2251069, 
@@ -119,13 +160,34 @@ class TestComputeEncounters(unittest.TestCase):
                     encounter.Encounter(b'2', b'1',
                         ts("2011-01-01T16:10:00Z"),
                         ts("2011-01-01T17:00:00Z"),
-                        -1.4710235833333334, 55.21933776666667,
+                        -1.4710235833333334, 55.219337766666875,
                         0.20333088100150815,
                         1.1175558891689739, 5, 6, 
                         start_lat=-1.471138, start_lon=55.2267713, 
                         end_lat=-1.4728546, end_lon=55.2116913)
         ]
 
+    def _get_dateline_expected(self):
+      return [
+                  encounter.Encounter(b'1', b'2', 
+                    datetime.datetime(2011, 1, 1, 16, 10, tzinfo=pytz.UTC), 
+                    datetime.datetime(2011, 1, 1, 17, 10, tzinfo=pytz.UTC), 
+                    -1.472143442857143, 
+                    179.999, 
+                    0.21170220169329662, 
+                    0.12370707201347748, 7, 6,
+                    start_lat=-1.4719963, start_lon=179.999, 
+                    end_lat=-1.4730263, end_lon=179.999),
+                  encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+                    start_time=datetime.datetime(2011, 1, 1, 16, 10, tzinfo=pytz.UTC), 
+                    end_time=datetime.datetime(2011, 1, 1, 17, 10, tzinfo=pytz.UTC), 
+                    mean_latitude=-1.4711380142857142, 
+                    mean_longitude=-179.9993, 
+                    median_distance_km=0.21170220169329662, 
+                    median_speed_knots=0.24416289971953248, 
+                    vessel_1_point_count=6, vessel_2_point_count=7,
+                    start_lat=-1.471138, start_lon=-179.9993, 
+                    end_lat=-1.4718246, end_lon=-179.999)]
 
 
     def _get_real_expected(self):
@@ -133,7 +195,7 @@ class TestComputeEncounters(unittest.TestCase):
             encounter.Encounter(b'441910000', b'563418000', 
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T20:10:00Z"),
-                          -27.47909444042379, 38.53374945895693,
+                          -27.47909444042379, 38.533749458969304,
                           0.028845166034633843,
                           0.20569554161530468, 7, 6, 
                           start_lat=-27.48458079902857, start_lon=38.5362468641449, 
@@ -141,19 +203,30 @@ class TestComputeEncounters(unittest.TestCase):
             encounter.Encounter(b'563418000', b'441910000',
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
-                          -27.480823491781422, 38.53562707753466,
+# <<<<<<< HEAD
+                          -27.480823491781422, 38.53562707753488,
                           0.030350584066300215,
                           0.17049202182476167, 4, 5, 
                           start_lat=-27.484518051171428, start_lon=38.53651973177143, 
                           end_lat=-27.475459163642533, end_lon=38.53207037113999)
+# =======
+#                           -27.480823491781422, 38.53562707753488,
+#                           0.030350584066300215,
+#                           0.17049202182476167, 4, 5)
+# >>>>>>> fix-fast-vessel-sep
         ]
 
 
     def _get_messages_expected(self):
         return [
+# <<<<<<< HEAD
+
+
+
             dict([('start_time', 1426750800.0), 
                   ('end_time', 1426759800.0), 
-                  ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753466), 
+                  ('mean_latitude', -27.480823491781422), 
+                  ('mean_longitude', 38.53562707753488), 
                   ('median_distance_km', 0.030350584066300215), 
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
@@ -164,28 +237,60 @@ class TestComputeEncounters(unittest.TestCase):
                   ('end_lat', -27.475459163642533), 
                   ('end_lon', 38.53207037113999)]), 
             dict([('start_time', 1426750800.0), 
+# =======
+#           dict([('start_time', 1426750800.0), 
+
+# >>>>>>> fix-fast-vessel-sep
                   ('end_time', 1426795800.0), 
                   ('mean_latitude', -27.47909444042379), 
-                  ('mean_longitude', 38.53374945895693), 
+                  ('mean_longitude', 38.533749458969304), 
                   ('median_distance_km', 0.028845166034633843), 
                   ('median_speed_knots', 0.20569554161530468), 
                   ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
                   ('vessel_1_id', b'441910000'), 
+# <<<<<<< HEAD
                   ('vessel_2_id', b'563418000'),
                   ('start_lat', -27.48458079902857), 
                   ('start_lon', 38.5362468641449), 
                   ('end_lat', -27.464933395399996), 
                   ('end_lon', 38.52257468481818)])][::-1]
 
-
+# =======
+#                   ('vessel_2_id', b'563418000')]),
+#             dict([('start_time', 1426750800.0), 
+#                   ('end_time', 1426759800.0), 
+#                   ('mean_latitude', -27.480823491781422), ('mean_longitude', 38.53562707753488), 
+#                   ('median_distance_km', 0.030350584066300215), 
+#                   ('median_speed_knots', 0.17049202182476167), 
+#                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
+#                   ('vessel_1_id', b'563418000'), 
+#                   ('vessel_2_id', b'441910000')]), 
+#             ] 
+# >>>>>>> fix-fast-vessel-sep
 
     def _get_merged_expected(self):
         return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
-                 1426750800.0, 'mean_longitude': 38.534062395386556, 
+                 1426750800.0, 'mean_longitude': 38.53406239539688, 
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
                  'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
+# <<<<<<< HEAD
                  'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000',
-                 'start_lat' : -27.48458079902857,
-                 'start_lon' : 38.5362468641449, 'end_lat' : -27.475459163642533, 
+                 'start_lat' : -27.484518051171428,
+                 'start_lon' : 38.53651973177143, 'end_lat' : -27.475459163642533, 
                  'end_lon': 38.53207037113999}]
+# =======
+#                  'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000'}]
+
+
+    def _get_merged_dateline_expected(self):
+        return [{'vessel_1_id': b'1', 'vessel_2_id': b'2', 'start_time': 1293898200.0, 
+             'end_time': 1293901800.0, 'mean_latitude': -1.4716407285714286, 
+             'mean_longitude': 179.99984999999998,
+             'median_distance_km': 0.21170220169329662, 
+             'median_speed_knots': 0.18393498586650497, 
+             'vessel_1_point_count': 14, 'vessel_2_point_count': 12,
+              'start_lat' :-1.4719963, 'start_lon' : 179.999, 
+              'end_lat' : -1.4730263, 'end_lon': 179.999}] 
+
+# >>>>>>> fix-fast-vessel-sep

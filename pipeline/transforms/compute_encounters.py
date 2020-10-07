@@ -54,7 +54,9 @@ class ComputeEncounters(PTransform):
 
         median_distance_km = median(dist for (rcd1, rcd2, dist) in adjacency_run)
         mean_lat = mean(rcd1.lat for (rcd1, rcd2, dist) in adjacency_run)
-        mean_lon = mean(rcd1.lon for (rcd1, rcd2, dist) in adjacency_run)
+        cos_lon = mean(math.cos(math.radians(rcd1.lon)) for (rcd1, rcd2, dist) in adjacency_run)
+        sin_lon = mean(math.sin(math.radians(rcd1.lon)) for (rcd1, rcd2, dist) in adjacency_run)
+        mean_lon = math.degrees(math.atan2(sin_lon, cos_lon))
         median_speed_knots = median(implied_speeds) * MPS_TO_KNOTS
 
         vessel_1_points = int(round(sum(rcd1.point_density for (rcd1, rcd2, dist) in adjacency_run)))
@@ -110,7 +112,6 @@ class ComputeEncounters(PTransform):
                     active_ids.add(rcd2.id)
             yield from self._create_valid_encounters(adjacency_runs, active_ids)
         yield from self._create_valid_encounters(adjacency_runs, set())
-
 
     def tag_with_id(self, item):
         return (item.id, item)
