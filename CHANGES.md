@@ -8,6 +8,15 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.5 - 2020-11-02
+
+### Changed
+
+* [Data Pipeline/PIPELINE-142](https://globalfishingwatch.atlassian.net/browse/PIPELINE-142): Changes
+  * Fix lon averaging across dateline for encounter creation.
+  * Fix lon averaging for merging.
+  * Fix existing tests and add new tests for creation and merging near dateline.
+
 ## v3.0.4 - 2020-09-18
 
 ### Changed
