@@ -8,6 +8,14 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.6 - 2020-11-04
+
+### Changed
+
+* [Data Pipeline/PIPELINE-229](https://globalfishingwatch.atlassian.net/browse/PIPELINE-229): Changes
+  * Pin to `pipe-tools:v3.1.3` that has the compare function with floating tolerance `approx_equal_to`.
+  * Replace the use of `equal_to` of beam to `approx_equal_to` in computation tests.
+
 ## v3.0.5 - 2020-11-02
 
 ### Changed

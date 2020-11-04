@@ -1,29 +1,32 @@
-import pytest
-import unittest
-import logging
-from collections import namedtuple
-from collections import OrderedDict
-import datetime
-import pytz
-
-import apache_beam as beam
-from apache_beam import Map
-from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
-from apache_beam.testing.util import assert_that
-from apache_beam.testing.util import equal_to
+from .series_data import real_series_data
+from .series_data import simple_series_data, dateline_series_data
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
-from .series_data import simple_series_data, dateline_series_data
-from .series_data import real_series_data
+
+from apache_beam import Map
+from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
+from apache_beam.testing.util import assert_that
+
+from collections import OrderedDict
+from collections import namedtuple
+
+from pipe_tools.utils import approx_equal_to as equal_to
 
 from pipeline.create_raw_pipeline import ensure_bytes_id
-from pipeline.transforms.resample import Resample
+from pipeline.objects import encounter
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
-from pipeline.objects import encounter
 from pipeline.transforms.merge_encounters import MergeEncounters
+from pipeline.transforms.resample import Resample
+
+import apache_beam as beam
+import datetime
+import logging
+import pytest
 import pytz
+import pytz
+import unittest
 
 
 logger = logging.getLogger()
