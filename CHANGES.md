@@ -8,6 +8,13 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.0.7 - 2020-11-06
+
+### Changed
+
+* [Data Pipeline/PIPELINE-231](https://globalfishingwatch.atlassian.net/browse/PIPELINE-231): Changes
+  * Updates the `dist_to_port_10km.pickle` with the new raster `distance_to_port_0p01_v20201104.tiff`.
+
 ## v3.0.6 - 2020-11-04
 
 ### Changed
