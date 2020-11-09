@@ -11,6 +11,7 @@ from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
+from pipe_tools.utils.test import approx_equal_to
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
@@ -62,7 +63,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
-            assert_that(results, equal_to(self._get_simple_expected()))
+            assert_that(results, approx_equal_to(self._get_simple_expected()))
 
     def test_real_data(self):
         with _TestPipeline() as p:
@@ -74,7 +75,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
-            assert_that(results, equal_to(self._get_real_expected()))
+            assert_that(results, approx_equal_to(self._get_real_expected()))
 
     def test_message_generation(self):
         with _TestPipeline() as p:
@@ -87,7 +88,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 | encounter.Encounter.ToDict()
             )
-            assert_that(results, equal_to(self._get_messages_expected()))
+            assert_that(results, approx_equal_to(self._get_messages_expected()))
 
     def test_merge_messages(self):
         with _TestPipeline() as p:
@@ -101,7 +102,7 @@ class TestComputeEncounters(unittest.TestCase):
                 | MergeEncounters(min_hours_between_encounters=24)
                 | encounter.Encounter.ToDict()
             )
-            assert_that(results, equal_to(self._get_merged_expected()))
+            assert_that(results, approx_equal_to(self._get_merged_expected()))
 
     def _get_simple_expected(self):
         return [
