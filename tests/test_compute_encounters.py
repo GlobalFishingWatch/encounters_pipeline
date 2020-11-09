@@ -10,7 +10,7 @@ import apache_beam as beam
 from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
-from apache_beam.testing.util import equal_to
+from pipe_tools.utils.test import approx_equal_to as equal_to
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
