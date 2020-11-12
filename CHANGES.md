@@ -10,6 +10,26 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## v3.0.4 - 2020-09-18
 
+### [GlobalFishingWatch/encounters_pipeline/#5](https://github.com/GlobalFishingWatch/encounters_pipeline/pull/5)
+
+### Added
+ 
+* Add encounter-id to merged encounters that is also picked up by voyages.
+  This is based off both tracks_ids, plus start and end time.
+* Add start / end lat/lon to encounter events
+
+### Removed
+
+* Remove Neighbor counts output since it unused and not reliable given variable coverage
+
+### Changed
+
+* Adapt encounters to use track-id
+* Allow multiple encounters to occur a single vessel at the same time
+* Update Tests
+
+## v3.0.5 - 2020-10-12
+
 ### Changed
 
 * [Data Pipeline/PIPELINE-106](https://globalfishingwatch.atlassian.net/browse/PIPELINE-106): Changes
