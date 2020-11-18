@@ -14,6 +14,7 @@ from pipeline.create_raw_pipeline import ensure_bytes_id
 from .test_resample import Record
 from .test_resample import ResampledRecord
 from .series_data import simple_series_data
+from pipe_tools.utils.test import approx_equal_to
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms import resample
 
@@ -54,7 +55,7 @@ class TestComputeAdjacency(unittest.TestCase):
                 | resample.Resample(increment_s=60*10, max_gap_s=60*70)
                 | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
             )
-            assert_that(results, equal_to(self._get_expected(interpolated=True)))
+            assert_that(results, approx_equal_to(self._get_expected(interpolated=True)))
 
     def _get_expected(self, interpolated=True):
         density = 0.5 if interpolated else 1.0
