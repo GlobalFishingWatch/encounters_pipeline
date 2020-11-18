@@ -8,6 +8,7 @@ import codecs
 package = __import__('pipeline')
 
 DEPENDENCIES = [
+    "clikit",
     "ujson==1.35",
     "statistics",
     "more_itertools",

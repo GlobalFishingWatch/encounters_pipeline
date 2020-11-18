@@ -12,8 +12,8 @@ from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.encounter import Encounter
 from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
-from pipeline.schemas.nbr_count_output import build as nbr_count_build_schema
 from pipeline.schemas.output import build as output_build_schema
+from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
@@ -42,44 +42,30 @@ def create_queries(options):
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("{id_prefix}", {vessel_id}) AS id
+      CONCAT("{id_prefix}", {id}) AS id
     FROM
         `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
-        AND lat     IS NOT NULL
-        AND lon     IS NOT NULL
-        AND speed   IS NOT NULL
-        AND seg_id IN (
-                SELECT seg_id
-                    FROM `{segment_table}*`
-                WHERE
-                    _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
-                    AND noise = FALSE
-                GROUP BY seg_id
-            )
-        GROUP BY 1,2,3,4,5
     """
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d')
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d')
 
-    vessel_id_txt = 'vessel_id' if (create_options.vessel_id_column is None) else create_options.vessel_id_column
+    id_txt = 'track_id' if (create_options.id_column is None) else create_options.id_column
 
-    for dataset in create_options.source_datasets:
-        if '::' in dataset:
-            id_prefix, dataset = dataset.split('::', 1)
+    for table in create_options.source_tables:
+        if '::' in table:
+            id_prefix, table = table.split('::', 1)
             id_prefix += ':'
         else:
             id_prefix = ''
-        dataset = dataset.replace(':', '.')
+        table = table.replace(':', '.')
         start_window = start_of_full_window
-        position_table = '{}.{}'.format(dataset,create_options.position_messages_table)
-        segment_table = '{}.{}'.format(dataset, create_options.segments_table)
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, position_table=position_table, segment_table=segment_table,
-                            start=start_window, end=end_window, vessel_id=vessel_id_txt, min_message_count=2)
+            query = template.format(id_prefix=id_prefix, position_table=table, 
+                            start=start_window, end=end_window, id=id_txt, min_message_count=2)
             print(query)
             yield query
             start_window = end_window + datetime.timedelta(days=1)
@@ -117,28 +103,14 @@ def run(options):
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
-        )
-
-    (adjacencies
         | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
                             min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | Encounter.ToDict()
+        | AddEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | writer
     )
-
-    if create_options.neighbor_table:
-        (adjacencies
-            | CreateTimestampedAdjacencies(start_date, end_date)
-            | "WriteNeighbors" >> WriteToBigQueryDatePartitioned(
-                temp_gcs_location=cloud_options.temp_location,
-                table=create_options.neighbor_table,
-                write_disposition="WRITE_TRUNCATE",
-                schema=nbr_count_build_schema(),
-                project=cloud_options.project
-                )
-            )
 
     result = p.run()
 

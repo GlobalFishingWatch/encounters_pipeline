@@ -10,12 +10,8 @@ class CreateOptions(PipelineOptions):
         required = parser.add_argument_group('Required')
         optional = parser.add_argument_group('Optional')
 
-        required.add_argument('--source_dataset', required=True, action='append', dest='source_datasets',
-                            help='Name of of datset to pull position_messages and segments tables from (BQ)')
-        required.add_argument('--position_messages_table', required=True,
-                            help='Name of table for `position_messages_`')
-        required.add_argument('--segments_table', required=True,
-                            help='Name of table for `legacy_segments_v1`')
+        required.add_argument('--source_table', required=True, action='append', dest='source_tables',
+                            help='Table to pull messages from')
         required.add_argument('--raw_table', required=True,
                             help='Table to write raw (unmerged) encounters to')
         required.add_argument('--start_date', required=True,
@@ -33,7 +29,5 @@ class CreateOptions(PipelineOptions):
                                  ' the new data, or WRITE_APPEND to add the new date without. Defaults to WRITE_APPEND.')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        optional.add_argument('--neighbor_table',
-                            help='Table to write neighbor counts to')
-        optional.add_argument('--vessel_id_column',
-                            help='value to use in query for extracting vessel_id')
+        optional.add_argument('--id_column',
+                            help='value to use in query for extracting id, defaults to `track_id`')

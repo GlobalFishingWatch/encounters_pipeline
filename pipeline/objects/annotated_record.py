@@ -4,7 +4,7 @@ from .resampled_record import ResampledRecord as _ResampledRecord
 
 
 AnnotatedRecord = namedtuple("AnnotatedRecord", 
-    _ResampledRecord._fields + ("neighbor_count", "closest_neighbor", "closest_distance"))
+    _ResampledRecord._fields + ("closest_neighbors", "closest_distances"))
 
 
 class AnnotatedRecordCoder(NamedtupleCoder):

@@ -5,11 +5,11 @@ class DummyOptions(object):
     def __init__(self, start_date, end_date, source_dataset="SOURCE_DATASET", position_messages_table="position_messages_", segments_table="segments_"):
         self.start_date = start_date
         self.end_date = end_date
-        self.source_datasets = [source_dataset]
+        self.source_tables = [source_dataset]
         self.position_messages_table=position_messages_table
         self.segments_table=segments_table
         self.fast_test = False
-        self.vessel_id_column = None
+        self.id_column = None
     def view_as(self, x):
       return self
 
@@ -22,23 +22,11 @@ def test_create_queries_1():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", vessel_id) AS id
+      CONCAT("", track_id) AS id
     FROM
-        `SOURCE_DATASET.position_messages_*`
+        `SOURCE_DATASET*`
     WHERE
-        _TABLE_SUFFIX BETWEEN \'20151231\' AND \'20160101\'
-        AND lat     IS NOT NULL
-        AND lon     IS NOT NULL
-        AND speed   IS NOT NULL
-        AND seg_id IN (
-                SELECT seg_id
-                    FROM `SOURCE_DATASET.segments_*`
-                WHERE
-                    _TABLE_SUFFIX BETWEEN \'20151231\' AND \'20160101\'
-                    AND noise = FALSE
-                GROUP BY seg_id
-            )
-        GROUP BY 1,2,3,4,5
+        _TABLE_SUFFIX BETWEEN '20151231' AND '20160101'
     """]]
 
 def test_create_queries_2():
@@ -49,23 +37,11 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", vessel_id) AS id
+      CONCAT("", track_id) AS id
     FROM
-        `SOURCE_DATASET.position_messages_*`
+        `SOURCE_DATASET*`
     WHERE
         _TABLE_SUFFIX BETWEEN '20120430' AND '20150124'
-        AND lat     IS NOT NULL
-        AND lon     IS NOT NULL
-        AND speed   IS NOT NULL
-        AND seg_id IN (
-                SELECT seg_id
-                    FROM `SOURCE_DATASET.segments_*`
-                WHERE
-                    _TABLE_SUFFIX BETWEEN '20120430' AND '20150124'
-                    AND noise = FALSE
-                GROUP BY seg_id
-            )
-        GROUP BY 1,2,3,4,5
     """,
     """
     SELECT
@@ -73,21 +49,9 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", vessel_id) AS id
+      CONCAT("", track_id) AS id
     FROM
-        `SOURCE_DATASET.position_messages_*`
+        `SOURCE_DATASET*`
     WHERE
         _TABLE_SUFFIX BETWEEN '20150125' AND '20170515'
-        AND lat     IS NOT NULL
-        AND lon     IS NOT NULL
-        AND speed   IS NOT NULL
-        AND seg_id IN (
-                SELECT seg_id
-                    FROM `SOURCE_DATASET.segments_*`
-                WHERE
-                    _TABLE_SUFFIX BETWEEN '20150125' AND '20170515'
-                    AND noise = FALSE
-                GROUP BY seg_id
-            )
-        GROUP BY 1,2,3,4,5
     """]]
