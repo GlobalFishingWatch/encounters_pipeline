@@ -10,6 +10,14 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ### Added
 
+## v1.0.0-HOTFIX1 - 2020-12-01
+
+### Added
+
+* [PIPELINE-255](https://globalfishingwatch.atlassian.net/browse/PIPELINE-255): Adds
+  pin over libraries `packaging:20.4` and `pipe-tools:v2.0.0-HOTFIX2` and over
+  python image to let the code compile in Dataflow.
+
 ## v1.0.0 - 2019-03-27
 
 ### Added

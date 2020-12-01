@@ -2,14 +2,15 @@ import codecs
 from setuptools import setup, find_packages
 
 PROJECT_NAME = 'encounters'
-PROJECT_VERSION = '1.0.0'
+PROJECT_VERSION = '1.0.0-HOTFIX1'
 PROJECT_DESCRIPTION = 'Apache Beam pipeline for computing vessel encounters.'
 DEPENDENCIES = [
+    "packaging==20.4",
     "ujson",
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==2.0.0",
+    "pipe-tools==2.0.0-HOTFIX2",
     "jinja2-cli",
 ]
 
