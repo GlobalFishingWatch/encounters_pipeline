@@ -9,11 +9,11 @@ from apache_beam.runners import PipelineState
 from apache_beam.transforms.window import TimestampedValue
 
 from pipe_tools.io import WriteToBigQueryDatePartitioned
-from pipeline.objects.encounter import Encounter
+from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
-from pipeline.schemas.output import build as output_build_schema
-from pipeline.transforms.add_id import AddEncounterId
+from pipeline.schemas.output import build_raw_encounter as output_build_schema
+from pipeline.transforms.add_id import AddRawEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
@@ -34,27 +34,34 @@ MAX_GAP_HOURS = 1.0
 PRECURSOR_DAYS = 1
 
 
-def create_queries(options):
-    create_options = options.view_as(CreateOptions)
+def create_queries(args):
     template = """
     SELECT
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("{id_prefix}", {id}) AS id
+      CONCAT("{id_prefix}", seg_id) AS id
     FROM
         `{position_table}*`
     WHERE
         _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+        {condition}
     """
-    start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d')
+    if args.ssvid_filter is None:
+        condition = ''
+    else:
+        condition = args.ssvid_filter
+        if filter_core.startswith('@'):
+            with open(args.ssvid_filter[1:]) as f:
+                filter_core = f.read()
+        condition = f'AND ssvid in ({filter_core})'
+
+    start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d')
     start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
-    end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d')
+    end_date= datetime.datetime.strptime(args.end_date, '%Y-%m-%d')
 
-    id_txt = 'track_id' if (create_options.id_column is None) else create_options.id_column
-
-    for table in create_options.source_tables:
+    for table in args.source_tables:
         if '::' in table:
             id_prefix, table = table.split('::', 1)
             id_prefix += ':'
@@ -65,8 +72,9 @@ def create_queries(options):
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
             query = template.format(id_prefix=id_prefix, position_table=table, 
-                            start=start_window, end=end_window, id=id_txt, min_message_count=2)
-            print(query)
+                                    start=start_window, end=end_window,
+                                    condition=condition
+                                    )
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
@@ -93,7 +101,7 @@ def run(options):
 
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
                                                                                   use_standard_sql=True)))
-                    for (i, x) in enumerate(create_queries(options))]
+                    for (i, x) in enumerate(create_queries(create_options))]
 
 
     adjacencies = (sources
@@ -106,8 +114,8 @@ def run(options):
         | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
                             min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
-        | Encounter.ToDict()
-        | AddEncounterId()
+        | RawEncounter.ToDict()
+        | AddRawEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | writer
     )

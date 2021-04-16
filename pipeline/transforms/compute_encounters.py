@@ -1,4 +1,4 @@
-from ..objects.encounter import Encounter
+from ..objects.encounter import RawEncounter
 from .compute_adjacency import compute_distance as compute_distance_km
 from apache_beam import FlatMap
 from apache_beam import GroupByKey
@@ -63,16 +63,18 @@ class ComputeEncounters(PTransform):
         vessel_2_points = int(round(sum(rcd2.point_density for (rcd1, rcd2, dist) in adjacency_run)))
 
         rcd1, rcd2, _ = adjacency_run[0]
-        yield Encounter(rcd1.id,
-                        rcd2.id,
-                        start_time,
-                        end_time,
-                        mean_lat,
-                        mean_lon,
-                        median_distance_km,
-                        median_speed_knots,
-                        vessel_1_points,
-                        vessel_2_points,
+
+        yield RawEncounter(
+                        vessel_1_seg_id = rcd1.id,
+                        vessel_2_seg_id = rcd2.id,
+                        start_time = start_time,
+                        end_time = end_time,
+                        mean_latitude = mean_lat,
+                        mean_longitude = mean_lon,
+                        median_distance_km = median_distance_km,
+                        median_speed_knots = median_speed_knots,
+                        vessel_1_point_count = vessel_1_points,
+                        vessel_2_point_count = vessel_2_points,
                         start_lat = rcd1.lat, 
                         start_lon = rcd1.lon, 
                         end_lat = adjacency_run[-1][0].lat, 

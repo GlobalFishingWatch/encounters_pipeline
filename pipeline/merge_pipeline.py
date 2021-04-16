@@ -6,7 +6,7 @@ from apache_beam import io
 from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 
-from pipeline.objects.encounter import Encounter
+from pipeline.objects.encounter import Encounter, RawEncounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.filter_inland import FilterInland
 from pipeline.transforms.filter_ports import FilterPorts
@@ -19,8 +19,74 @@ import logging
 import pytz
 import six
 
-def ensure_bytes_vessel_id(obj):
-    return obj._replace(vessel_1_id=six.ensure_binary(obj.vessel_1_id))._replace(vessel_2_id=six.ensure_binary(obj.vessel_2_id))
+
+def combine_ids(obj):
+    for v in [1, 2]:
+        obj[f'vessel_{v}_seg_id'] = (six.ensure_binary(obj.pop(f'vessel_{v}_id')), 
+                                 six.ensure_binary(obj[f'vessel_{v}_seg_id']))
+    return obj
+
+def create_queries(args, start_date, end_date):
+    template = """
+    WITH
+
+    raw_encounters as (
+        SELECT * except (start_time, end_time, encounter_id), -- TODO: do raw_encounters need an id?
+                CAST(UNIX_MICROS(start_time) AS FLOAT64) / 1000000 AS start_time,
+                CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time
+        FROM `{raw_table}*` events
+        WHERE _table_suffix BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' 
+          {condition}
+    ),
+
+    vessel_ids as (
+        {vessel_id_query}
+    )
+
+    SELECT raw_encounters.*,
+            vid1.vessel_id as vessel_1_id,
+            vid2.vessel_id as vessel_2_id
+    FROM raw_encounters
+    JOIN vessel_ids as vid1
+    ON vessel_1_seg_id = vid1.seg_id
+    JOIN vessel_ids as vid2
+    ON vessel_2_seg_id = vid2.seg_id
+
+    """
+    if args.bad_segs_table is None:
+        condition = ''
+    else:
+        # TODO: need multiple bad segs tables to support multiple inputs. Need optional 'prefix::' for them
+        condition = f'  AND seg_id NOT IN (SELECT seg_id FROM {args.bad_segs_table})'
+
+    subqueries = []
+    for table in args.vessel_id_tables:
+        if '::' in table:
+            id_prefix, table = table.split('::', 1)
+            id_prefix += ':'
+        else:
+            id_prefix = ''
+        table = table.replace(':', '.')
+        subqueries.append(f'SELECT CONCAT("{id_prefix}", seg_id) AS seg_id, vessel_id FROM {table}')
+    vessel_id_query = '\nUNION ALL\n'.join(subqueries)
+
+    start_window = start_date
+    shift = 1000
+    while start_window <= end_date:
+        end_window = min(start_window + datetime.timedelta(days=shift), end_date)
+        query = template.format(raw_table=args.raw_table, 
+                                condition=condition,
+                                vessel_id_query=vessel_id_query,
+                                start=start_window, end=end_window)
+        yield query
+        start_window = end_window + datetime.timedelta(days=1)
+
+
+# TODO: raw encounters always uses seg_id [x]
+# TODO: copy code from port_visits to get encounters per vessel_id. [x]
+# TODO: and filter using bad_seg_table [x]
+# TODO: ???
+# TODO: profit.
 
 def run(options):
 
@@ -44,20 +110,22 @@ def run(options):
     start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(merge_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
-    queries = Encounter.create_queries(merge_options.raw_table, start_date, end_date)
+    queries = create_queries(merge_options, start_date, end_date)
 
-    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x)))
+    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x,
+                            use_standard_sql=True)))
                     for (i, x) in enumerate(queries)]
 
     raw_encounters = (sources
         | Flatten()
-        | Encounter.FromDict()
-        | 'Ensure VESSEL_X_ID is bytes' >> Map(ensure_bytes_vessel_id)
+        | "CombineSegVesselIds" >> Map(combine_ids)
+        | RawEncounter.FromDict()
     )
 
     if merge_options.min_encounter_time_minutes is not None:
         raw_encounters = (raw_encounters
-            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > merge_options.min_encounter_time_minutes)
+            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > 
+                                merge_options.min_encounter_time_minutes)
         )
 
     merged  = (raw_encounters
@@ -67,6 +135,7 @@ def run(options):
     if writer_merged is not None:
         (merged 
             | "MergedToDicts" >> Encounter.ToDict()
+            | AddEncounterId()
             | "WriteMerged" >> writer_merged
         )
 
