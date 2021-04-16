@@ -12,6 +12,12 @@ class MergeOptions(PipelineOptions):
 
         required.add_argument('--raw_table', required=True, 
                             help='Table to pull raw (unmerged) encounters to')
+        required.add_argument('--vessel_id_table',  required=True, action='append', dest='vessel_id_tables',
+                            help='Name of table mapping vessel_id to seg_id (BQ). '
+                            'Should have one vessel_id per seg_id, e.g. the `segment_info` table.'
+                            ' May be prefixed by "{ID}::" to prefix '
+                            'the seg_id with {ID}. This is useful for applying to multiple sources '
+                            '(e.g., AIS/VMS) while ensuring the seg_ids stay distinct.')
         required.add_argument('--sink_table',
                             help='Table to write file, merged and filtered encounters to')      
         required.add_argument('--start_date', required=True, 
@@ -26,4 +32,9 @@ class MergeOptions(PipelineOptions):
         required.add_argument('--min_encounter_time_minutes', required=False, type=float,
                             help="Minimum minutes of vessel adjacency before we have an encounter.\n"
                                   "Does not have an effect if lower than value used in the create pipeline")
-
+        optional.add_argument('--bad_segs_table', 
+                            help='table of containing segment ids of bad segments')
+        optional.add_argument('--ssvid_filter', 
+                            help='Subquery or list of ssvid to limit processing to.\n'
+                                 'If prefixed by @, load from given path')
+   

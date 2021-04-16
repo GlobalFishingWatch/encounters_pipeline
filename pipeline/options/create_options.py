@@ -11,7 +11,9 @@ class CreateOptions(PipelineOptions):
         optional = parser.add_argument_group('Optional')
 
         required.add_argument('--source_table', required=True, action='append', dest='source_tables',
-                            help='Table to pull messages from')
+                            help='Table to pull messages from. May be prefixed by "{ID}::" to prefix '
+                                 'the seg_id with {ID}. This is useful for applying to multiple sources '
+                                 '(e.g., AIS/VMS) while ensuring the seg_ids stay distinct.')
         required.add_argument('--raw_table', required=True,
                             help='Table to write raw (unmerged) encounters to')
         required.add_argument('--start_date', required=True,
@@ -29,5 +31,7 @@ class CreateOptions(PipelineOptions):
                                  ' the new data, or WRITE_APPEND to add the new date without. Defaults to WRITE_APPEND.')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        optional.add_argument('--id_column',
-                            help='value to use in query for extracting id, defaults to `track_id`')
+        optional.add_argument('--ssvid_filter', 
+                            help='Subquery or list of ssvid to limit processing to.\n'
+                                 'If prefixed by @, load from given path')
+   
