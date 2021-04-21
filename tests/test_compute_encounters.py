@@ -3,6 +3,10 @@ from .series_data import simple_series_data, dateline_series_data
 
 from .test_resample import Record
 from .test_resample import ResampledRecord
+import unittest
+from collections import namedtuple
+from collections import OrderedDict
+import six
 
 from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
@@ -28,6 +32,13 @@ import unittest
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
+
+def add_fake_vessel_id(obj):
+    obj = obj._asdict()
+    for v in [1, 2]:
+        obj[f'vessel_{v}_seg_id'] = (six.ensure_binary(obj[f'vessel_{v}_seg_id']), 
+                                     six.ensure_binary(obj[f'vessel_{v}_seg_id']))
+    return encounter.RawEncounter(**obj)
 
 
 inf = float('inf')
@@ -159,12 +170,14 @@ class TestComputeEncounters(unittest.TestCase):
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                | beam.Map(add_fake_vessel_id)
                 | MergeEncounters(min_hours_between_encounters=24)
                 | encounter.Encounter.ToDict()
             )
             assert_that(results, equal_to(self._get_merged_expected()))
 
     def test_merge_dateline(self):
+
         with _TestPipeline() as p:
             results = (
                 p
@@ -173,14 +186,16 @@ class TestComputeEncounters(unittest.TestCase):
                 | Resample(increment_s=60*10, max_gap_s=60*70)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
+                | beam.Map(add_fake_vessel_id)
                 | MergeEncounters(min_hours_between_encounters=24)
                 | encounter.Encounter.ToDict()
             )
             assert_that(results, equal_to(self._get_merged_dateline_expected()))
 
+
     def _get_simple_expected(self):
         return [
-            encounter.Encounter(b'1', b'2',
+            encounter.RawEncounter(b'1', b'2',
                 ts("2011-01-01T16:10:00Z"),
                 ts("2011-01-01T17:00:00Z"),
                 -1.4719963, 55.21973783333268,
@@ -188,7 +203,7 @@ class TestComputeEncounters(unittest.TestCase):
                 0.6467305031568592, 6, 5, 
                 start_lat=-1.4719963, start_lon=55.2251069, 
                 end_lat=-1.4725113, end_lon=55.2156088),
-            encounter.Encounter(b'2', b'1',
+            encounter.RawEncounter(b'2', b'1',
                 ts("2011-01-01T16:10:00Z"),
                 ts("2011-01-01T17:00:00Z"),
                 -1.4710235833333334, 55.219337766666875,
@@ -200,7 +215,7 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_dateline_expected(self):
       return [
-          encounter.Encounter(b'1', b'2', 
+          encounter.RawEncounter(b'1', b'2', 
             datetime.datetime(2011, 1, 1, 16, 10, tzinfo=pytz.UTC), 
             datetime.datetime(2011, 1, 1, 17, 10, tzinfo=pytz.UTC), 
             -1.472143442857143, 
@@ -209,7 +224,7 @@ class TestComputeEncounters(unittest.TestCase):
             0.12370707201347748, 7, 6,
             start_lat=-1.4719963, start_lon=179.999, 
             end_lat=-1.4730263, end_lon=179.999),
-          encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+          encounter.RawEncounter(b'2', b'1', 
             start_time=datetime.datetime(2011, 1, 1, 16, 10, tzinfo=pytz.UTC), 
             end_time=datetime.datetime(2011, 1, 1, 17, 10, tzinfo=pytz.UTC), 
             mean_latitude=-1.4711380142857142, 
@@ -223,38 +238,38 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_multi_expected(self):
         return [
-            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'2', 
+            encounter.RawEncounter(vessel_1_seg_id=b'1', vessel_2_seg_id=b'2', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
                 vessel_1_point_count=13, vessel_2_point_count=12, start_lat=0.0, 
                 start_lon=0.0, end_lat=0.0, end_lon=0.0), 
-            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'3', 
+            encounter.RawEncounter(vessel_1_seg_id=b'1', vessel_2_seg_id=b'3', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.11119492664455874,
                  median_speed_knots=0.0, vessel_1_point_count=13, vessel_2_point_count=12, 
                  start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.0), 
-            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+            encounter.RawEncounter(vessel_1_seg_id=b'2', vessel_2_seg_id=b'1', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.00046153846153749106, 
                 median_distance_km=0.0, median_speed_knots=0.0, vessel_1_point_count=12, 
                 vessel_2_point_count=13, start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.001), 
-            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'3', 
+            encounter.RawEncounter(vessel_1_seg_id=b'2', vessel_2_seg_id=b'3', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 20, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 50, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.0004374999999984383, 
                 median_distance_km=0.11119492664455874, median_speed_knots=0.0, 
                 vessel_1_point_count=15, vessel_2_point_count=15, start_lat=0.0, start_lon=0.0, 
                 end_lat=0.0, end_lon=0.001), 
-            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'1', 
+            encounter.RawEncounter(vessel_1_seg_id=b'3', vessel_2_seg_id=b'1', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), mean_latitude=0.0, 
                 mean_longitude=0.000538461538462509, median_distance_km=0.11119492664455874, 
                 median_speed_knots=0.0, vessel_1_point_count=12, vessel_2_point_count=13, 
                 start_lat=0.0, start_lon=0.001, end_lat=0.0, end_lon=0.0), 
-            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'2', 
+            encounter.RawEncounter(vessel_1_seg_id=b'3', vessel_2_seg_id=b'2', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 20, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 50, tzinfo=pytz.UTC), mean_latitude=0.0, 
                 mean_longitude=0.0005625000000015619, median_distance_km=0.11119492664455874, 
@@ -265,25 +280,25 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_nerfed_multi_expected(self):
         return [
-            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'2', 
+            encounter.RawEncounter(vessel_1_seg_id=b'1', vessel_2_seg_id=b'2', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 16, 40, tzinfo=pytz.UTC),
                 mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
                 vessel_1_point_count=7, vessel_2_point_count=6, start_lat=0.0, 
                 start_lon=0.0, end_lat=0.0, end_lon=0.0), 
-            encounter.Encounter(vessel_1_id=b'1', vessel_2_id=b'3', 
+            encounter.RawEncounter(vessel_1_seg_id=b'1', vessel_2_seg_id=b'3', 
                 start_time=datetime.datetime(2011, 1, 1, 16, 50, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.0, median_distance_km=0.0, median_speed_knots=0.0, 
                 vessel_1_point_count=6, vessel_2_point_count=6, start_lat=0.0, 
                 start_lon=0.0, end_lat=0.0, end_lon=0.0), 
-            encounter.Encounter(vessel_1_id=b'2', vessel_2_id=b'1', 
+            encounter.RawEncounter(vessel_1_seg_id=b'2', vessel_2_seg_id=b'1', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), 
                 mean_latitude=0.0, mean_longitude=0.00046153846153749106, 
                 median_distance_km=0.0, median_speed_knots=0.0, vessel_1_point_count=12, 
                 vessel_2_point_count=13, start_lat=0.0, start_lon=0.0, end_lat=0.0, end_lon=0.001), 
-            encounter.Encounter(vessel_1_id=b'3', vessel_2_id=b'1', 
+            encounter.RawEncounter(vessel_1_seg_id=b'3', vessel_2_seg_id=b'1', 
                 start_time=datetime.datetime(2011, 1, 1, 15, 40, tzinfo=pytz.UTC), 
                 end_time=datetime.datetime(2011, 1, 1, 17, 40, tzinfo=pytz.UTC), mean_latitude=0.0, 
                 mean_longitude=0.000538461538462509, median_distance_km=0.11119492664455874, 
@@ -295,7 +310,7 @@ class TestComputeEncounters(unittest.TestCase):
 
     def _get_real_expected(self):
         return [
-            encounter.Encounter(b'441910000', b'563418000', 
+            encounter.RawEncounter(b'441910000', b'563418000', 
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T20:10:00Z"),
                           -27.47909444042379, 38.533749458969304,
@@ -303,7 +318,7 @@ class TestComputeEncounters(unittest.TestCase):
                           0.20569554161530468, 7, 6, 
                           start_lat=-27.48458079902857, start_lon=38.5362468641449, 
                           end_lat=-27.464933395399996, end_lon=38.52257468481818),
-            encounter.Encounter(b'563418000', b'441910000',
+            encounter.RawEncounter(b'563418000', b'441910000',
                           ts("2015-03-19T07:40:00Z"),
                           ts("2015-03-19T10:10:00Z"),
                           -27.480823491781422, 38.53562707753488,
@@ -323,8 +338,8 @@ class TestComputeEncounters(unittest.TestCase):
                   ('median_distance_km', 0.028845166034633843), 
                   ('median_speed_knots', 0.20569554161530468), 
                   ('vessel_1_point_count', 7), ('vessel_2_point_count', 6), 
-                  ('vessel_1_id', b'441910000'), 
-                  ('vessel_2_id', b'563418000'),
+                  ('vessel_1_seg_id', b'441910000'), 
+                  ('vessel_2_seg_id', b'563418000'),
                   ('start_lat', -27.48458079902857), 
                   ('start_lon', 38.5362468641449), 
                   ('end_lat', -27.464933395399996), 
@@ -336,8 +351,8 @@ class TestComputeEncounters(unittest.TestCase):
                   ('median_distance_km', 0.030350584066300215), 
                   ('median_speed_knots', 0.17049202182476167), 
                   ('vessel_1_point_count', 4), ('vessel_2_point_count', 5), 
-                  ('vessel_1_id', b'563418000'), 
-                  ('vessel_2_id', b'441910000'),
+                  ('vessel_1_seg_id', b'563418000'), 
+                  ('vessel_2_seg_id', b'441910000'),
                   ('start_lat', -27.484518051171428), 
                   ('start_lon', 38.53651973177143), 
                   ('end_lat', -27.475459163642533), 
@@ -347,17 +362,19 @@ class TestComputeEncounters(unittest.TestCase):
     def _get_merged_expected(self):
         return [{'median_speed_knots': 0.18809378172003316, 'start_time': 
                  1426750800.0, 'mean_longitude': 38.53406239539688, 
+                 'vessel_1_seg_ids' : ['441910000'], 'vessel_2_seg_ids' : ['563418000'],
                  'vessel_2_point_count': 10, 'mean_latitude': -27.479382615650064, 
                  'end_time':  1426795800.0, 
                  'median_distance_km': 0.02959787505046703, 'vessel_1_point_count': 12, 
                  'vessel_2_id': b'563418000', 'vessel_1_id': b'441910000',
                  'start_lat' : -27.484518051171428,
-                 'start_lon' : 38.53651973177143, 'end_lat' : -27.475459163642533, 
-                 'end_lon': 38.53207037113999}]
+                 'start_lon' : 38.53651973177143, 'end_lat' : -27.464933395399996, 
+                 'end_lon': 38.52257468481818}]
 
 
     def _get_merged_dateline_expected(self):
         return [{'vessel_1_id': b'1', 'vessel_2_id': b'2', 'start_time': 1293898200.0, 
+             'vessel_1_seg_ids' : ['1'], 'vessel_2_seg_ids' : ['2'],
              'end_time': 1293901800.0, 'mean_latitude': -1.4716407285714286, 
              'mean_longitude': 179.99984999999998,
              'median_distance_km': 0.21170220169329662, 

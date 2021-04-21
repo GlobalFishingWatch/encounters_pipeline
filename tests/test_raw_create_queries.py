@@ -10,6 +10,7 @@ class DummyOptions(object):
         self.segments_table=segments_table
         self.fast_test = False
         self.id_column = None
+        self.ssvid_filter = None
     def view_as(self, x):
       return self
 
@@ -22,7 +23,7 @@ def test_create_queries_1():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", track_id) AS id
+      CONCAT("", seg_id) AS id
     FROM
         `SOURCE_DATASET*`
     WHERE
@@ -37,7 +38,7 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", track_id) AS id
+      CONCAT("", seg_id) AS id
     FROM
         `SOURCE_DATASET*`
     WHERE
@@ -49,7 +50,7 @@ def test_create_queries_2():
       lon        AS lon,
       speed      AS speed,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
-      CONCAT("", track_id) AS id
+      CONCAT("", seg_id) AS id
     FROM
         `SOURCE_DATASET*`
     WHERE
