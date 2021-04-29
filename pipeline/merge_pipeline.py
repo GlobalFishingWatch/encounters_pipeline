@@ -13,6 +13,7 @@ from pipeline.transforms.filter_ports import FilterPorts
 from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.writers import WriteToBq
+from pipeline.schemas.output import build as build_schema
 
 import datetime
 import logging
@@ -82,29 +83,23 @@ def create_queries(args, start_date, end_date):
         start_window = end_window + datetime.timedelta(days=1)
 
 
-# TODO: raw encounters always uses seg_id [x]
-# TODO: copy code from port_visits to get encounters per vessel_id. [x]
-# TODO: and filter using bad_seg_table [x]
-# TODO: ???
-# TODO: profit.
-
 def run(options):
 
     p = Pipeline(options=options)
 
     merge_options = options.view_as(MergeOptions)
 
-    if merge_options.merged_sink_table:
-        writer_merged = WriteToBq(
-            table=merge_options.merged_sink_table,
-            write_disposition="WRITE_TRUNCATE",
-        )
-    else:
-        writer_merged = None
-    writer_filtered = WriteToBq(
-        table=merge_options.sink_table,
-        write_disposition="WRITE_TRUNCATE",
-    )
+    # writer_filtered = WriteToBq(
+    #     table=merge_options.sink_table,
+    #     write_disposition="WRITE_TRUNCATE",
+    # )
+
+    writer = io.WriteToBigQuery(
+        merge_options.sink_table,
+        schema=build_schema(),
+        write_disposition=io.BigQueryDisposition.WRITE_TRUNCATE,
+        create_disposition=io.BigQueryDisposition.CREATE_IF_NEEDED,
+        additional_bq_parameters={'timePartitioning': {'type': 'DAY'}})
 
 
     start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
@@ -122,29 +117,23 @@ def run(options):
         | RawEncounter.FromDict()
     )
 
+
+    merged  = (raw_encounters
+        | FilterPorts()
+        | FilterInland()
+        | MergeEncounters(min_hours_between_encounters=merge_options.min_hours_between_encounters)
+    )
+
     if merge_options.min_encounter_time_minutes is not None:
-        raw_encounters = (raw_encounters
-            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 > 
+        merged = (merged
+            | Filter(lambda x: (x.end_time - x.start_time).total_seconds() / 60.0 >= 
                                 merge_options.min_encounter_time_minutes)
         )
 
-    merged  = (raw_encounters
-        | MergeEncounters(min_hours_between_encounters=24) # TODO: parameterize
-    )
-
-    if writer_merged is not None:
-        (merged 
-            | "MergedToDicts" >> Encounter.ToDict()
-            | AddEncounterId()
-            | "WriteMerged" >> writer_merged
-        )
-
-    (merged
-        | FilterPorts()
-        | FilterInland()
+    merged = (merged
         | "FilteredToDicts" >> Encounter.ToDict()
         | AddEncounterId()
-        | "WriteFiltered" >> writer_filtered
+        | writer
     )
 
     result = p.run()
