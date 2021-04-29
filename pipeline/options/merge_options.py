@@ -25,13 +25,13 @@ class MergeOptions(PipelineOptions):
         required.add_argument('--end_date', required=True, 
                             help="Last date (inclusive) to merge.")
 
-        optional.add_argument('--merged_sink_table', 
-                            help='Table to write merged, but unfiltered encounters to')
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
         required.add_argument('--min_encounter_time_minutes', required=False, type=float,
                             help="Minimum minutes of vessel adjacency before we have an encounter.\n"
                                   "Does not have an effect if lower than value used in the create pipeline")
+        required.add_argument('--min_hours_between_encounters', required=False, type=float, default=4,
+                            help="Minimum hours between two encounters before merging them")
         optional.add_argument('--bad_segs_table', 
                             help='table of containing segment ids of bad segments')
         optional.add_argument('--ssvid_filter', 
