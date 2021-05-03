@@ -57,64 +57,77 @@ In incremental mode, the form of the command is
                 --setup_file ./setup.py \
                 --requirements_file requirements.txt \
                 --runner DataflowRunner \
-                --disk_size_gb 100
+                --disk_size_gb 100 \
+                --region us-central1
 
-Note that raw_table needs to be persistent since it is appended to with each run.
-Here is a concrete example:
-
-
-        docker-compose run create_raw_encounters \
-                --source_table pipe_staging_a.position_messages_ \
-                --start_date 2017-01-01 \
-                --end_date 2017-12-31 \
-                --max_encounter_dist_km 0.5 \
-                --min_encounter_time_minutes 120 \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
-                --project world-fishing-827 \
-                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
-                --job_name encounters-create-test \
-                --max_num_workers 200 \
-                --setup_file ./setup.py \
-                --requirements_file requirements.txt \
-                --runner DataflowRunner \
-                --disk_size_gb 100
+The raw encounters are then merged together, removing duplicates and merging across day boundaries:
 
 
         docker-compose run merge_encounters \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_30d.raw_encounters_uvi_05km_ \
-                --sink_table world-fishing-827:machine_learning_dev_ttl_30d.encounters_uvi_05km \
+                --raw_table RAW_TABLE \
+                --vessel_id_table SEGMENT_TABLE \
+                --sink_table MERGED_TABLE \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
-                --start_date 2017-01-01 \
-                --end_date 2017-12-31 \
+                --start_date 2018-01-01 \
+                --end_date 2018-12-31 \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-merge-test \
-                --max_num_workers 200 \
+                --max_num_workers 50 \
                 --setup_file ./setup.py \
                 --requirements_file requirements.txt \
                 --runner DataflowRunner \
-                --disk_size_gb 100
+                --disk_size_gb 100 \
+                --region us-central1
 
 
-It's also possible to specify multiple source tables. The tables can be optionally prefixed with `ID_PREFIX::`, which will
-be prepended to ids from that source. For example:
+Currently, raw encounters are created based on segment id, since this is a stable (static)
+identifier. During the merge process, encounters are merged using vessel id, which does a better
+job stitching together segments, but is not stable. This is feasible since the merging process
+happens later in the pipeline and is run across all time on every day.
+
+Note that raw_table needs to be persistent since it is date sharded and new dates
+are added with each run.
+
 
         docker-compose run create_raw_encounters \
-                --source_table ais::pipe_production_b.position_messages_ \
-                --source_table indo_vms::pipe_indo_production_v20180727:source_table \
+                --source_table pipe_production_v20201001.position_messages_ \
+                --start_date 2018-01-01 \
+                --end_date 2018-12-31 \
+                --max_encounter_dist_km 0.5 \
+                --min_encounter_time_minutes 60 \
+                --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_encounters_test_ \
+                --project world-fishing-827 \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-pip \
+                --max_num_workers 100 \
+                --setup_file ./setup.py \
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100 \
+                --region us-central1
+
+
+        docker-compose run merge_encounters \
+                --raw_table machine_learning_dev_ttl_120d.raw_encounters_test_ \
+                --vessel_id_table pipe_production_v20201001.segment_info \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_120d.encounters_test_v20210426b \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
-                --start_date 2015-01-01 \
-                --end_date 2015-12-31 \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_mixed_indo_ais_encounters_test_ \
+                --start_date 2018-01-01 \
+                --end_date 2018-12-31 \
                 --project world-fishing-827 \
-                --temp_location gs://machine-learning-dev-ttl-120d/scratch/encounters \
-                --job_name mixed-encounters-test \
-                --max_num_workers 100 \
-                --requirements_file requirements.txt \
+                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
+                --job_name encounters-merge-test \
+                --max_num_workers 50 \
                 --setup_file ./setup.py \
-                --runner DataflowRunner 
+                --requirements_file requirements.txt \
+                --runner DataflowRunner \
+                --disk_size_gb 100 \
+                --region us-central1
+
+
 
 ## Updating the Distance to Port Mask
 
