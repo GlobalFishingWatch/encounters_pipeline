@@ -113,7 +113,6 @@ are added with each run.
                 --raw_table machine_learning_dev_ttl_120d.raw_encounters_test_ \
                 --vessel_id_table pipe_production_v20201001.segment_info \
                 --sink_table world-fishing-827:machine_learning_dev_ttl_120d.encounters_test_v20210426b \
-                --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 120 \
                 --start_date 2018-01-01 \
                 --end_date 2018-12-31 \
