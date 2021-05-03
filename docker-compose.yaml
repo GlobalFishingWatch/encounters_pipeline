@@ -22,7 +22,7 @@ services:
       - ".:/opt/project"
       - "gcp:/root/.config/"
   test:
-    entrypoint: ["py.test",  "tests"]
+    entrypoint: "py.test"
     image: gfw/pipe-encounters
     build: .
     volumes:

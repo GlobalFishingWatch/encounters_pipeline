@@ -15,6 +15,7 @@ from .test_resample import ResampledRecord
 from .series_data import simple_series_data
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms import resample
+from pipeline.options.create_options import CreateOptions
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -39,7 +40,21 @@ class TestComputeAdjacency(unittest.TestCase):
 
     def test_with_resampling(self):
 
-        with _TestPipeline() as p:
+        args=[
+            f'--source_dataset={simple_series_data}',
+            '--position_messages_table=xxx',
+            '--segments_table=xxx',
+            '--raw_table=xxx',
+            '--start_date=2021-01-01',
+            '--end_date=2021-01-01',
+            '--max_encounter_dist_km=1.0',
+            '--min_encounter_time_minutes=120',
+            '--runner=DirectRunner'
+        ]
+        with _TestPipeline(options=CreateOptions(args)) as p:
+            print('==============SIMPLE DATA====================')
+            print(simple_series_data)
+            print('==============SIMPLE DATA====================')
             results = (
                 p
                 | beam.Create(simple_series_data)
