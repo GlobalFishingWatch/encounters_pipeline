@@ -5,7 +5,7 @@ import logging
 import pytz
 from more_itertools import peekable
 from ..objects.resampled_record import ResampledRecord
-from .group_by_id import GroupById
+from .group_by_id import GroupByIdAndDate
 from .sort_by_time import SortByTime
 from apache_beam import PTransform
 from apache_beam import FlatMap
@@ -48,8 +48,6 @@ class Resample(PTransform):
 
     def resample_records(self, records):
         """
-        item = (key, records)
-
         records: list of records that has been sorted by time and uniquified
 
         """ 
@@ -92,7 +90,9 @@ class Resample(PTransform):
     def expand(self, xs):
         return (
             xs
-            | GroupById()
+            # This is slightly less accurate than just by id, but makes but makes behavior consistent
+            # across daily and longer runs and protects against hot keys on long runs.
+            | GroupByIdAndDate() 
             | SortByTime()
             | FlatMap(self.resample)
         )

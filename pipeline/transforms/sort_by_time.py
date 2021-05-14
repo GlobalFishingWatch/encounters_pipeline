@@ -27,8 +27,10 @@ class SortByTime(PTransform):
         sorted_records = []
         for t in sorted(time_map):
             records_at_t = time_map[t]
+            id_ = records_at_t[0].id
+            assert [x.id == id_ for x in records_at_t]
             sorted_records.append(Record(
-                id = key,
+                id = id_,
                 timestamp = t,
                 lat = median(x.lat for x in records_at_t),
                 lon = median(x.lon for x in records_at_t),
