@@ -35,3 +35,13 @@ class SchemaBuilder(object):
         field = self.build(name, schema_type, mode, description)
         self.schema.fields.append(field)
         return field
+
+
+def schema_field_to_dict(x):
+    return {'name' : x.name,
+            'mode' : x.mode,
+            'type' : x.type,
+            'fields' : [schema_field_to_dict(x) for x in x.fields]}
+
+def schema_to_obj(x):
+    return [schema_field_to_dict(x) for x in x.fields]

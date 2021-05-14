@@ -100,7 +100,7 @@ class ComputeEncounters(PTransform):
         ======
         Encounter
         """
-        vessel_id, records = item
+        key, records = item
         adjacency_runs = defaultdict(list)
 
         for rcd1 in records:
@@ -174,7 +174,7 @@ class ComputeEncounters(PTransform):
         return [x for (key, value) in encounters.items() for x in value]
 
     def tag_with_id(self, item):
-        return (item.id, item)
+        return ((item.id, item.timestamp.date()), item)
 
     def sort_by_time(self, item):
         key, value = item

@@ -12,7 +12,8 @@ from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
-from pipeline.schemas.output import build_raw_encounter as output_build_schema
+from pipeline.schemas.output import build_raw_encounter
+from pipeline.schemas.utils import schema_to_obj
 from pipeline.transforms.add_id import AddRawEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
@@ -51,7 +52,7 @@ def create_queries(args):
     if args.ssvid_filter is None:
         condition = ''
     else:
-        condition = args.ssvid_filter
+        filter_core = args.ssvid_filter
         if filter_core.startswith('@'):
             with open(args.ssvid_filter[1:]) as f:
                 filter_core = f.read()
@@ -78,8 +79,37 @@ def create_queries(args):
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
-def ensure_bytes_id(obj):
-    return obj._replace(id=six.ensure_binary(obj.id))
+# def ensure_bytes_id(obj):
+#     return obj._replace(id=six.ensure_binary(obj.id))
+
+# def ensure_text_seg_ids(mapping):
+#     try:
+#         mapping['vessel_1_seg_id'] = six.ensure_text(mapping['vessel_1_seg_id'])
+#         mapping['vessel_2_seg_id'] = six.ensure_text(mapping['vessel_2_seg_id'])
+#     except:
+#         raise ValueError(f'could not turn to text {mapping["vessel_1_seg_id"]}, {mapping["vessel_2_seg_id"]}')
+#     return mapping
+
+
+def check_schema(x, schema):
+    assert set(x.keys()) == set([x['name'] for x in schema]), x.keys()
+    for field in schema:
+        assert field['mode'] == 'REQUIRED'
+        # TODO: support 'NULLABLE' and 'REPEATED'
+        ftype = field['type']
+        val = x[field['name']]
+        allowed_types_map = {
+            'STRING' : (str,),
+            'INTEGER' : (int,),
+            'FLOAT' : (int, float),
+            'TIMESTAMP' : (int, float)
+        }
+        if ftype not in allowed_types_map:
+             raise ValueError(f'unknown schema type {field}') 
+        allowed_types = allowed_types_map[ftype]
+        assert isinstance(val, allowed_types), (field, val)
+    return x
+
 
 def run(options):
 
@@ -95,7 +125,7 @@ def run(options):
                 temp_gcs_location=cloud_options.temp_location,
                 table=create_options.raw_table,
                 write_disposition="WRITE_TRUNCATE",
-                schema=output_build_schema(),
+                schema=build_raw_encounter(),
                 project=cloud_options.project
                 )
 
@@ -107,7 +137,7 @@ def run(options):
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
-        | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
+        # | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
@@ -116,7 +146,9 @@ def run(options):
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | RawEncounter.ToDict()
         | AddRawEncounterId()
+        # | Map(ensure_text_seg_ids)
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
+        | Map(check_schema, schema=schema_to_obj(build_raw_encounter()))
         | writer
     )
 
