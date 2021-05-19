@@ -79,17 +79,6 @@ def create_queries(args):
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
-# def ensure_bytes_id(obj):
-#     return obj._replace(id=six.ensure_binary(obj.id))
-
-# def ensure_text_seg_ids(mapping):
-#     try:
-#         mapping['vessel_1_seg_id'] = six.ensure_text(mapping['vessel_1_seg_id'])
-#         mapping['vessel_2_seg_id'] = six.ensure_text(mapping['vessel_2_seg_id'])
-#     except:
-#         raise ValueError(f'could not turn to text {mapping["vessel_1_seg_id"]}, {mapping["vessel_2_seg_id"]}')
-#     return mapping
-
 
 def check_schema(x, schema):
     assert set(x.keys()) == set([x['name'] for x in schema]), x.keys()
@@ -137,7 +126,6 @@ def run(options):
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
-        # | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
         | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
                    max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
@@ -146,7 +134,6 @@ def run(options):
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | RawEncounter.ToDict()
         | AddRawEncounterId()
-        # | Map(ensure_text_seg_ids)
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | Map(check_schema, schema=schema_to_obj(build_raw_encounter()))
         | writer
