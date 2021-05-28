@@ -22,6 +22,7 @@ def test_create_queries_1():
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
+      course     AS course,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM
@@ -37,6 +38,7 @@ def test_create_queries_2():
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
+      course     AS course,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM
@@ -49,6 +51,7 @@ def test_create_queries_2():
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
+      course     AS course,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM

@@ -1,5 +1,6 @@
 from __future__ import division
 from collections import defaultdict
+import math
 from apache_beam import PTransform
 from apache_beam import Map
 from apache_beam import typehints
@@ -35,8 +36,9 @@ class SortByTime(PTransform):
                 lat = median(x.lat for x in records_at_t),
                 lon = median(x.lon for x in records_at_t),
                 speed = median(x.speed for x in records_at_t),
+                course = math.atan2(median(math.sin(math.radians(x.course)) for x in records_at_t),
+                                    median(math.cos(math.radians(x.course)) for x in records_at_t))
                 ))
-
         return key, sorted_records
 
     def expand(self, xs):
