@@ -18,7 +18,6 @@ from .test_resample import ResampledRecord
 from .series_data import simple_series_data, dateline_series_data, fastsep_series_data, multi_series_data
 from .series_data import real_series_data
 
-from pipeline.create_raw_pipeline import ensure_bytes_id
 from pipeline.transforms.resample import Resample
 from pipeline.transforms import compute_adjacency 
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
@@ -26,6 +25,10 @@ from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.objects import encounter
 from pipeline.transforms.merge_encounters import MergeEncounters
 import pytz
+
+
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
 
 
 logger = logging.getLogger()
@@ -71,7 +74,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(simple_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
@@ -83,7 +86,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(multi_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
@@ -97,7 +100,7 @@ class TestComputeEncounters(unittest.TestCase):
                     p
                     | beam.Create(multi_series_data)
                     | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                    | Resample(increment_s=60*10, max_gap_s=60*70)
+                    | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                     | ComputeAdjacency(max_adjacency_distance_km=1.0, max_tracked_distances=1) 
                     | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 )
@@ -109,7 +112,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(dateline_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
@@ -128,7 +131,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(fastsep_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
@@ -140,7 +143,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(real_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
             )
@@ -152,7 +155,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(real_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 | encounter.Encounter.ToDict()
@@ -165,7 +168,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(real_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 | beam.Map(add_fake_vessel_id)
@@ -181,7 +184,7 @@ class TestComputeEncounters(unittest.TestCase):
                 p
                 | beam.Create(dateline_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | Resample(increment_s=60*10, max_gap_s=60*70)
+                | Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | ComputeAdjacency(max_adjacency_distance_km=1.0) 
                 | ComputeEncounters(max_km_for_encounter=0.5, min_minutes_for_encounter=30)
                 | beam.Map(add_fake_vessel_id)

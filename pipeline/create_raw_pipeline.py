@@ -41,6 +41,7 @@ def create_queries(args):
       lat        AS lat,
       lon        AS lon,
       speed      AS speed,
+      course     AS course,
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", seg_id) AS id
     FROM

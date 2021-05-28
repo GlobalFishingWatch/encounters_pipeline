@@ -3,6 +3,7 @@ import unittest
 import logging
 import numpy as np
 from collections import namedtuple
+import six
 
 import apache_beam as beam
 from apache_beam import Map
@@ -10,7 +11,6 @@ from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
 from pipe_tools.utils.test import approx_equal_to as equal_to
 
-from pipeline.create_raw_pipeline import ensure_bytes_id
 from .test_resample import Record
 from .test_resample import ResampledRecord
 from .series_data import simple_series_data
@@ -20,6 +20,8 @@ from pipeline.transforms import resample
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
 
 inf = float('inf')
 
@@ -51,7 +53,7 @@ class TestComputeAdjacency(unittest.TestCase):
                 p
                 | beam.Create(simple_series_data)
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | resample.Resample(increment_s=60*10, max_gap_s=60*70)
+                | resample.Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
             )
             assert_that(results, equal_to(self._get_expected(interpolated=True)))
