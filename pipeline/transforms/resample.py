@@ -109,16 +109,19 @@ class Resample(PTransform):
         nm_s = record.speed / (60 * 60)
         deg_lat_s = nm_s / 60
         dlat_dt = math.cos(rads) * deg_lat_s
-        dlon_dt = math.sin(rads) * deg_lat_s * math.cos(math.radians(record.lat))
+        dlon_dt = math.sin(rads) * deg_lat_s / math.cos(math.radians(record.lat))
 
         interp_time = beg_time
         while interp_time <= end_time:
             dt = interp_time - t0
+            lat = record.lat + dt * dlat_dt
+            lon = record.lon + dt * dlon_dt
+            lon = (lon + 180) % 360 - 180
             yield ResampledRecord(
                     id = record.id,
                     timestamp = timestamp_as_datetime(interp_time),
-                    lat = record.lat + dt * dlat_dt,
-                    lon = record.lon + dt * dlon_dt,
+                    lat = lat,
+                    lon = lon,
                     speed = record.speed,
                     point_density = round(self.increment_s / max(float(dt), self.increment_s), 2)
                     )
@@ -138,10 +141,8 @@ class Resample(PTransform):
         """ 
         date = records[0].timestamp.date()
         assert records[-1].timestamp.date() == date, (records[0].timestamp, records[1].timestamp)
-        beg_dt = max(dtime.datetime.combine(date, dtime.time.min, tzinfo=pytz.UTC), 
-                     records[0].timestamp - dtime.timedelta(seconds=self.max_gap_s))
-        end_dt = min(dtime.datetime.combine(date, dtime.time.max, tzinfo=pytz.UTC), 
-                     records[-1].timestamp + dtime.timedelta(seconds=self.max_gap_s))
+        beg_dt = records[0].timestamp - dtime.timedelta(seconds=self.max_gap_s)
+        end_dt = records[-1].timestamp + dtime.timedelta(seconds=self.max_gap_s)
 
         beg_interp = self.round_to_increment(records[0].timestamp, rounder=math.ceil)
         end_interp = self.round_to_increment(records[-1].timestamp, rounder=math.floor)

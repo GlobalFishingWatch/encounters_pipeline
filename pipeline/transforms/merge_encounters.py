@@ -92,7 +92,8 @@ class MergeEncounters(PTransform):
                 records = [rcd]
             else:
                 records.append(rcd)
-            end = enc.end_time
+            # It's possible to have overlapping encounters with same id, so use max end_time
+            end = max(enc.end_time, end)
         if records:
             yield self.encounter_from_records(key_id_1, key_id_2, records)
 

@@ -60,7 +60,6 @@ def create_queries(args):
         condition = f'AND ssvid in ({filter_core})'
 
     start_date = datetime.datetime.strptime(args.start_date, '%Y-%m-%d')
-    start_of_full_window = start_date - datetime.timedelta(days=PRECURSOR_DAYS)
     end_date= datetime.datetime.strptime(args.end_date, '%Y-%m-%d')
 
     for table in args.source_tables:
@@ -70,7 +69,7 @@ def create_queries(args):
         else:
             id_prefix = ''
         table = table.replace(':', '.')
-        start_window = start_of_full_window
+        start_window = start_date
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
             query = template.format(id_prefix=id_prefix, position_table=table, 
