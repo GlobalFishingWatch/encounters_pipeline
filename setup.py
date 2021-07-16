@@ -13,7 +13,7 @@ DEPENDENCIES = [
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==3.1.2",
+    "pipe-tools==3.2.1",
     "jinja2-cli",
     "six>=1.13",
     "cython"

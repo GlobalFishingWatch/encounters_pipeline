@@ -11,7 +11,6 @@ from apache_beam.transforms.window import TimestampedValue
 from pipe_tools.io import WriteToBigQueryDatePartitioned
 from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
-from pipeline.options.create_options import CreateOptions
 from pipeline.schemas.output import build_raw_encounter
 from pipeline.schemas.utils import schema_to_obj
 from pipeline.transforms.add_id import AddRawEncounterId
@@ -101,6 +100,7 @@ def check_schema(x, schema):
 
 
 def run(options):
+    from pipeline.options.create_options import CreateOptions
 
     p = Pipeline(options=options)
 

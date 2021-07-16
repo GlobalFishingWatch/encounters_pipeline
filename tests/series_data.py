@@ -1,6 +1,10 @@
 import datetime
 import pytz
-from .test_resample import Record
+from .test_resample import Record as Record
+
+# def Record(*args, **kwargs):
+#     kwargs['id'] = kwargs['id'].encode('ascii')
+#     return _Record(*args, **kwargs)
 
 path_1 = [
     Record("2011-01-01 15:40:00 UTC", -1.5032387, 55.2340155, id='1'),

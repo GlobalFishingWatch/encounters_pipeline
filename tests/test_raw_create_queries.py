@@ -28,7 +28,7 @@ def test_create_queries_1():
     FROM
         `SOURCE_DATASET*`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20151231' AND '20160101'
+        _TABLE_SUFFIX BETWEEN '20160101' AND '20160101'
     """]]
 
 def test_create_queries_2():
@@ -44,7 +44,7 @@ def test_create_queries_2():
     FROM
         `SOURCE_DATASET*`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20120430' AND '20150124'
+        _TABLE_SUFFIX BETWEEN '20120501' AND '20150125'
     """,
     """
     SELECT
@@ -57,5 +57,5 @@ def test_create_queries_2():
     FROM
         `SOURCE_DATASET*`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20150125' AND '20170515'
+        _TABLE_SUFFIX BETWEEN '20150126' AND '20170515'
     """]]
