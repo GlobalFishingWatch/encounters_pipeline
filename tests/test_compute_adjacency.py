@@ -16,6 +16,8 @@ from .test_resample import ResampledRecord
 from .series_data import simple_series_data
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms import resample
+from pipeline.objects import record
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -48,10 +50,13 @@ class TestComputeAdjacency(unittest.TestCase):
 
     def test_with_resampling(self):
 
+        tuple_data = [tuple(x) for x in simple_series_data]
+
         with _TestPipeline() as p:
             results = (
                 p
-                | beam.Create(simple_series_data)
+                | beam.Create(tuple_data)
+                | beam.Map(lambda x : record.Record(*x))
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
                 | resample.Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
