@@ -145,7 +145,7 @@ class PipeEncountersDagFactory(DagFactory):
                         # Required
                         start_date=self.default_args['start_date'].strftime("%Y-%m-%d"),
                         end_date=end_date,
-                        raw_table='{project_id}:{pipeline_dataset}.{raw_table}'.format(**config),
+                        raw_table='{project_id}.{pipeline_dataset}.{raw_table}'.format(**config),
                         sink_table='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
                         vessel_id_table='{source_dataset}.{segment_info}'.format(**config),
                         spatial_measures_table='{spatial_measures_source}'.format(**config),
