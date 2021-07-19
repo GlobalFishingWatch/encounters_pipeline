@@ -2,11 +2,14 @@ from airflow import DAG
 from airflow.contrib.sensors.bigquery_sensor import BigQueryTableSensor
 from airflow.models import Variable
 
+from airflow_ext.gfw import config as config_tools
 from airflow_ext.gfw.models import DagFactory
 from airflow_ext.gfw.operators.bigquery_operator import BigQueryCreateEmptyTableOperator
 from airflow_ext.gfw.operators.dataflow_operator import DataFlowDirectRunnerOperator
+from airflow.contrib.operators.bigquery_check_operator import BigQueryCheckOperator
 
 import posixpath as pp
+from datetime import timedelta
 
 
 PIPELINE='pipe_encounters'
@@ -99,6 +102,36 @@ class PipeEncountersDagFactory(DagFactory):
                     end_date_str=end_date
                 )
 
+                segment_info_updated = BigQueryCheckOperator(
+                    task_id='segment_info_updated',
+                    sql='select count(*) from `{source_dataset}.{segment_info}` where date(last_timestamp) = "{ds}"'.format(**config),
+                    use_legacy_sql=False,
+                    retries=144,
+                    retry_delay=timedelta(minutes=30),
+                    max_retry_delay=timedelta(minutes=30),
+                    on_failure_callback=config_tools.failure_callback_gfw
+                )
+
+                spatial_measures_existence = BigQueryCheckOperator(
+                    task_id='spatial_measures_existence',
+                    sql='select count(*) from `{spatial_measures_source}`'.format(**config),
+                    use_legacy_sql=False,
+                    retries=144,
+                    retry_delay=timedelta(minutes=30),
+                    max_retry_delay=timedelta(minutes=30),
+                    on_failure_callback=config_tools.failure_callback_gfw
+                )
+
+                distance_from_port_existence = BigQueryCheckOperator(
+                    task_id='distance_from_port_existence',
+                    sql='select count(*) from `{distance_from_port_source}`'.format(**config),
+                    use_legacy_sql=False,
+                    retries=144,
+                    retry_delay=timedelta(minutes=30),
+                    max_retry_delay=timedelta(minutes=30),
+                    on_failure_callback=config_tools.failure_callback_gfw
+                )
+
                 merge_encounters = DataFlowDirectRunnerOperator(
                     task_id='merge-encounters',
                     pool='dataflow',
@@ -135,7 +168,9 @@ class PipeEncountersDagFactory(DagFactory):
                     )
                 )
 
-                create_raw_encounters >> ensure_creation_tables >> merge_encounters
+                create_raw_encounters >> ensure_creation_tables >> segment_info_updated >> merge_encounters
+                create_raw_encounters >> ensure_creation_tables >> spatial_measures_existence >> merge_encounters
+                create_raw_encounters >> ensure_creation_tables >> distance_from_port_existence >> merge_encounters
 
             return dag
 
