@@ -20,9 +20,11 @@ python $AIRFLOW_HOME/utils/set_default_variables.py \
     position_messages_table="position_messages_" \
     project_id="{{ var.value.PROJECT_ID }}" \
     raw_table="raw_encounters_" \
-    segments_table="legacy_segment_v1_" \
+    segment_info="segment_info" \
+    spatial_measures_source="pipe_static.spatial_measures_20200311" \
+    distance_from_port_source="pipe_static.distance_from_port_20200311" \
     source_dataset="{{ var.value.PIPELINE_DATASET }}" \
-    source_tables="position_messages_,legacy_segment_v1_" \
+    source_tables="position_messages_" \
     temp_bucket="{{ var.value.TEMP_BUCKET }}"
 
 echo "Installation Complete"
