@@ -122,16 +122,6 @@ class PipeEncountersDagFactory(DagFactory):
                     on_failure_callback=config_tools.failure_callback_gfw
                 )
 
-                distance_from_port_existence = BigQueryCheckOperator(
-                    task_id='distance_from_port_existence',
-                    sql='select count(*) from `{distance_from_port_source}`'.format(**config),
-                    use_legacy_sql=False,
-                    retries=144,
-                    retry_delay=timedelta(minutes=30),
-                    max_retry_delay=timedelta(minutes=30),
-                    on_failure_callback=config_tools.failure_callback_gfw
-                )
-
                 merge_encounters = DataFlowDirectRunnerOperator(
                     task_id='merge-encounters',
                     pool='dataflow',
@@ -149,7 +139,6 @@ class PipeEncountersDagFactory(DagFactory):
                         sink_table='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
                         vessel_id_table='{source_dataset}.{segment_info}'.format(**config),
                         spatial_measures_table='{spatial_measures_source}'.format(**config),
-                        distance_from_port_table='{distance_from_port_source}'.format(**config),
 
                         # GoogleCloud options
                         project=config['project_id'],
@@ -170,7 +159,6 @@ class PipeEncountersDagFactory(DagFactory):
 
                 create_raw_encounters >> ensure_creation_tables >> segment_info_updated >> merge_encounters
                 create_raw_encounters >> ensure_creation_tables >> spatial_measures_existence >> merge_encounters
-                create_raw_encounters >> ensure_creation_tables >> distance_from_port_existence >> merge_encounters
 
             return dag
 
