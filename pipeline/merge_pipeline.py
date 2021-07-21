@@ -119,7 +119,7 @@ def run(options):
         group by gridcode
     )
 
-    select gridcode, distance_from_shore_m, distance_from_port_m
+    select gridcode, distance_from_shore_m, dfport.distance_from_port_m
     from `{merge_options.spatial_measures_table}`
     join dfport
     using (gridcode)
