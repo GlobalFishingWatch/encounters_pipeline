@@ -1,25 +1,29 @@
 import pytest
 import unittest
 import logging
+import numpy as np
 from collections import namedtuple
+import six
 
 import apache_beam as beam
 from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
-from apache_beam.testing.util import equal_to
+from pipe_tools.utils.test import approx_equal_to as equal_to
 
-from pipeline.create_raw_pipeline import ensure_bytes_id
 from .test_resample import Record
 from .test_resample import ResampledRecord
 from .series_data import simple_series_data
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms import resample
-from pipeline.options.create_options import CreateOptions
+from pipeline.objects import record
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+def ensure_bytes_id(obj):
+    return obj._replace(id=six.ensure_binary(obj.id))
 
 inf = float('inf')
 
@@ -30,8 +34,14 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
         nbr_id, nbr_dist, nbr_args = closest_neighbor
         closest_neighbor = ResampledRecord(*nbr_args, id=nbr_id)
     record = record._replace(id=vessel_id)
-    return compute_adjacency.AnnotatedRecord(neighbor_count=neighbor_count, closest_distance=nbr_dist,
-            closest_neighbor=closest_neighbor, **record._asdict())
+    if np.isinf(nbr_dist):
+        closest_neighbors = []
+        closest_distances = []
+    else:
+        closest_neighbors = [closest_neighbor]
+        closest_distances = [nbr_dist]
+    return compute_adjacency.AnnotatedRecord(closest_distances=closest_distances,
+            closest_neighbors=closest_neighbors, **record._asdict())
 
 
 @pytest.mark.filterwarnings('ignore:Using fallback coder:UserWarning')
@@ -40,26 +50,15 @@ class TestComputeAdjacency(unittest.TestCase):
 
     def test_with_resampling(self):
 
-        args=[
-            f'--source_dataset={simple_series_data}',
-            '--position_messages_table=xxx',
-            '--segments_table=xxx',
-            '--raw_table=xxx',
-            '--start_date=2021-01-01',
-            '--end_date=2021-01-01',
-            '--max_encounter_dist_km=1.0',
-            '--min_encounter_time_minutes=120',
-            '--runner=DirectRunner'
-        ]
-        with _TestPipeline(options=CreateOptions(args)) as p:
-            print('==============SIMPLE DATA====================')
-            print(simple_series_data)
-            print('==============SIMPLE DATA====================')
+        tuple_data = [tuple(x) for x in simple_series_data]
+
+        with _TestPipeline() as p:
             results = (
                 p
-                | beam.Create(simple_series_data)
+                | beam.Create(tuple_data)
+                | beam.Map(lambda x : record.Record(*x))
                 | 'Ensure ID is bytes' >> Map(ensure_bytes_id)
-                | resample.Resample(increment_s=60*10, max_gap_s=60*70)
+                | resample.Resample(increment_s=60*10, max_gap_s=60*70, extrapolate=False)
                 | compute_adjacency.ComputeAdjacency(max_adjacency_distance_km=1.0) 
             )
             assert_that(results, equal_to(self._get_expected(interpolated=True)))

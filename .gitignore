@@ -1,5 +1,10 @@
+untracked/
+
 # Created by https://www.gitignore.io/api/python
 .DS_Store
+*.ipynb
+untracked
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/

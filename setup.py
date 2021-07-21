@@ -8,11 +8,12 @@ import codecs
 package = __import__('pipeline')
 
 DEPENDENCIES = [
+    "clikit",
     "ujson==1.35",
     "statistics",
     "more_itertools",
     "s2sphere",
-    "pipe-tools==3.2.0",
+    "pipe-tools==3.2.1",
     "jinja2-cli",
     "six>=1.13",
     "cython"
