@@ -29,6 +29,8 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
   Adapt encounters to use track-id
   Allow multiple encounters to occur a single vessel at the same time
   Update Tests
+* [PIPELINE-367](https://globalfishingwatch.atlassian.net/browse/PIPELINE-367):
+  Changes the automate to support last changes with seg-id.
 
 ## v3.1.1 - 2021-06-23
 
