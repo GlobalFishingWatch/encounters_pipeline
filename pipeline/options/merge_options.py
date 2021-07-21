@@ -26,8 +26,6 @@ class MergeOptions(PipelineOptions):
                             help="Last date (inclusive) to merge.")
         required.add_argument('--spatial_measures_table', required=True,
                             help="Table to pull distance from shore from.")
-        required.add_argument('--distance_from_port_table', required=True,
-                            help="Table to pull distance from port from.")
 
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')

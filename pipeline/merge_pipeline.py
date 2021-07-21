@@ -112,17 +112,8 @@ def run(options):
     merge_options = options.view_as(MergeOptions)
 
     dists_query = f"""
-    with dfport as (
-        select format("lon:%+07.2f_lat:%+07.2f", lon, lat) as gridcode, 
-               avg(distance_from_port_m) distance_from_port_m
-        from `{merge_options.distance_from_port_table}`
-        group by gridcode
-    )
-
-    select gridcode, distance_from_shore_m, dfport.distance_from_port_m
+    select gridcode, distance_from_shore_m, distance_from_port_m
     from `{merge_options.spatial_measures_table}`
-    join dfport
-    using (gridcode)
     """
 
     writer = io.WriteToBigQuery(

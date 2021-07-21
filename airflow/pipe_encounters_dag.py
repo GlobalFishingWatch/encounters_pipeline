@@ -149,7 +149,6 @@ class PipeEncountersDagFactory(DagFactory):
                         sink_table='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
                         vessel_id_table='{source_dataset}.{segment_info}'.format(**config),
                         spatial_measures_table='{spatial_measures_source}'.format(**config),
-                        distance_from_port_table='{distance_from_port_source}'.format(**config),
 
                         # GoogleCloud options
                         project=config['project_id'],
