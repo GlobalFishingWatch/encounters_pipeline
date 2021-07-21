@@ -94,7 +94,7 @@ are added with each run.
         docker-compose run create_raw_encounters \
                 --source_table pipe_production_v20201001.position_messages_ \
                 --start_date 2018-01-01 \
-                --end_date 2018-12-31 \
+                --end_date 2018-01-31 \
                 --max_encounter_dist_km 0.5 \
                 --min_encounter_time_minutes 60 \
                 --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_encounters_test_ \
@@ -112,10 +112,11 @@ are added with each run.
         docker-compose run merge_encounters \
                 --raw_table machine_learning_dev_ttl_120d.raw_encounters_test_ \
                 --vessel_id_table pipe_production_v20201001.segment_info \
-                --sink_table world-fishing-827:machine_learning_dev_ttl_120d.encounters_test_v20210426b \
+                --sink_table world-fishing-827:machine_learning_dev_ttl_120d.encounters_test_v20210718 \
+                --spatial_measures_table world-fishing-827.pipe_static.spatial_measures_20200311 \
                 --min_encounter_time_minutes 120 \
                 --start_date 2018-01-01 \
-                --end_date 2018-12-31 \
+                --end_date 2018-01-31 \
                 --project world-fishing-827 \
                 --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
                 --job_name encounters-merge-test \
@@ -127,30 +128,6 @@ are added with each run.
                 --region us-central1
 
 
-
-## Updating the Distance to Port Mask
-
-Run:
-
-    python -c 'from pipeline.transforms import mask; mask.BaseMask.sparsify(RASTER_PATH, "pipeline/data/dist_to_port_10km.pickle", 10)'
-
-Then commit your changes.
-
-        docker-compose run merge_encounters \
-                --raw_table world-fishing-827:machine_learning_dev_ttl_120d.raw_mixed_indo_ais_encounters_test_ \
-                --sink_table world-fishing-827:machine_learning_dev_ttl_120d.mixed_indo_ais_encounters_test \
-                --max_encounter_dist_km 0.5 \
-                --min_encounter_time_minutes 120 \
-                --start_date 2015-01-01 \
-                --end_date 2015-01-31 \
-                --project world-fishing-827 \
-                --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
-                --job_name mixed-encounters-merge-test \
-                --max_num_workers 50 \
-                --setup_file ./setup.py \
-                --requirements_file requirements.txt \
-                --runner DataflowRunner \
-                --disk_size_gb 100
 
 # License
 
