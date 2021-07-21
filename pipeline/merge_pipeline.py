@@ -17,6 +17,7 @@ from pipeline.schemas.output import build as build_schema
 
 import datetime
 import logging
+import numpy as np
 import pytz
 import six
 
@@ -89,21 +90,29 @@ def create_queries(args, start_date, end_date):
 def filter_by_distance(x, min_distance_from_port_km):
     grid_code, mapping = x
     encounters = mapping['raw_encounters']
+    if not encounters:
+        return []
     distance_sets = list(mapping['distances'])
     if not distance_sets:
         logging.warning(f'including encounters with no distance info at {grid_code}')
         return encounters
     assert len(distance_sets) == 1, len(distance_sets)
     [distances] = distance_sets
-    if distances['distance_from_port_m'] < min_distance_from_port_km * 1000:
+    if distances['distance_from_port_m'] is None:
+        logging.warning(f'including encounters with missing distance_from_port {grid_code}')
+    elif distances['distance_from_port_m'] < min_distance_from_port_km * 1000:
         return []
-    if distances['distance_from_shore_m'] <= 0:
+    if distances['distance_from_shore_m'] is None:
+        logging.warning(f'including encounters with missing distance_from_shore {grid_code}')    
+    elif distances['distance_from_shore_m'] <= 0:
         return []
     return encounters
 
 def tag_with_gridcode(x):
-    gc = f"lon:{round(x.mean_longitude, 2):+07.2f}_lat:{round(x.mean_latitude, 2):+07.2f}"
-    return (gc.replace('-000.00', '+000.00'), x)
+    lat = np.clip(x.mean_latitude, -89.99, 89.99)
+    gc = f"lon:{round(x.mean_longitude, 2):+07.2f}_lat:{round(lat, 2):+07.2f}"
+    gc = gc.replace('-000.00', '+000.00').replace('+180.00', '-180.00')
+    return (gc, x)
 
 def run(options):
 
@@ -112,17 +121,8 @@ def run(options):
     merge_options = options.view_as(MergeOptions)
 
     dists_query = f"""
-    with dfport as (
-        select format("lon:%+07.2f_lat:%+07.2f", lon, lat) as gridcode, 
-               avg(distance_from_port_m) distance_from_port_m
-        from `{merge_options.distance_from_port_table}`
-        group by gridcode
-    )
-
     select gridcode, distance_from_shore_m, distance_from_port_m
     from `{merge_options.spatial_measures_table}`
-    join dfport
-    using (gridcode)
     """
 
     writer = io.WriteToBigQuery(
