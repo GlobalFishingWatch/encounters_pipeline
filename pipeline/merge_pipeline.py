@@ -33,9 +33,10 @@ def create_queries(args, start_date, end_date):
     WITH
 
     raw_encounters as (
-        SELECT * except (start_time, end_time, encounter_id), -- TODO: do raw_encounters need an id?
+        SELECT * except (start_time, end_time, encounter_id), 
                 CAST(UNIX_MICROS(start_time) AS FLOAT64) / 1000000 AS start_time,
-                CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time
+                CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time,
+                format("lon:%+07.2f_lat:%+07.2f", mean_longitude, mean_latitude) as gridcode,
         FROM `{raw_table}*` events
         WHERE _table_suffix BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' 
           {condition}
@@ -45,15 +46,17 @@ def create_queries(args, start_date, end_date):
         {vessel_id_query}
     )
 
-    SELECT raw_encounters.*,
+    SELECT raw_encounters.* except(gridcode),
             vid1.vessel_id as vessel_1_id,
-            vid2.vessel_id as vessel_2_id
+            vid2.vessel_id as vessel_2_id,
+            distance_from_shore_m, distance_from_port_m
     FROM raw_encounters
     JOIN vessel_ids as vid1
     ON vessel_1_seg_id = vid1.seg_id
     JOIN vessel_ids as vid2
     ON vessel_2_seg_id = vid2.seg_id
-
+    JOIN  `{spatial_measures_table}`
+    USING (gridcode)
     """
     if args.bad_segs_table is None:
         condition = ''
@@ -81,32 +84,21 @@ def create_queries(args, start_date, end_date):
         query = template.format(raw_table=args.raw_table, 
                                 condition=condition,
                                 vessel_id_query=vessel_id_query,
-                                start=start_window, end=end_window)
+                                start=start_window, end=end_window,
+                                spatial_measures_table=args.spatial_measures_table)
         yield query
         start_window = end_window + datetime.timedelta(days=1)
 
 
 
-def filter_by_distance(x, min_distance_from_port_km):
-    grid_code, mapping = x
-    encounters = mapping['raw_encounters']
-    if not encounters:
+def filter_by_distance(obj, min_distance_from_port_km):
+    distance_from_shore_m = obj.pop('distance_from_shore_m')
+    distance_from_port_m = obj.pop('distance_from_port_m')
+    if distance_from_port_m < min_distance_from_port_km * 1000:
         return []
-    distance_sets = list(mapping['distances'])
-    if not distance_sets:
-        logging.warning(f'including encounters with no distance info at {grid_code}')
-        return encounters
-    assert len(distance_sets) == 1, len(distance_sets)
-    [distances] = distance_sets
-    if distances['distance_from_port_m'] is None:
-        logging.warning(f'including encounters with missing distance_from_port {grid_code}')
-    elif distances['distance_from_port_m'] < min_distance_from_port_km * 1000:
+    elif distance_from_shore_m <= 0:
         return []
-    if distances['distance_from_shore_m'] is None:
-        logging.warning(f'including encounters with missing distance_from_shore {grid_code}')    
-    elif distances['distance_from_shore_m'] <= 0:
-        return []
-    return encounters
+    return [obj]
 
 def tag_with_gridcode(x):
     lat = np.clip(x.mean_latitude, -89.99, 89.99)
@@ -142,22 +134,11 @@ def run(options):
                             use_standard_sql=True)))
                     for (i, x) in enumerate(queries)]
 
-    raw_encounters = (sources
+    merged = (sources
         | Flatten()
         | "CombineSegVesselIds" >> Map(combine_ids)
-        | RawEncounter.FromDict()
-    )
-
-    distances = (p
-        | io.Read(io.gcp.bigquery.BigQuerySource(query=dists_query, use_standard_sql=True))
-        | Map(lambda x : (x['gridcode'], x))
-    )
-
-    tagged  = raw_encounters | Map(tag_with_gridcode)
-
-    merged = ({'raw_encounters' : tagged, 'distances' : distances}
-        | CoGroupByKey()
         | FlatMap(filter_by_distance, min_distance_from_port_km=10)
+        | RawEncounter.FromDict()
         | MergeEncounters(min_hours_between_encounters=merge_options.min_hours_between_encounters)
     )
 
