@@ -116,14 +116,8 @@ def run(options):
                 table=create_options.raw_table,
                 write_disposition="WRITE_TRUNCATE",
                 schema=build_raw_encounter(),
-                project=cloud_options.project,
-                additional_bq_parameters={
-                    'description': f"""
-                        Table of raw encounters produced by day.
-                        * Pipeline: encounters_pipeline {pkg_resources.get_distribution("encounters").version}
-                        * Source tables: {create_options.source_tables}
-                    """
-                })
+                project=cloud_options.project
+            )
 
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
                                                                                   use_standard_sql=True)))
