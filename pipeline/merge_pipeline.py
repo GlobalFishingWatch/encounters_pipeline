@@ -18,6 +18,7 @@ from pipeline.schemas.output import build as build_schema
 import datetime
 import logging
 import numpy as np
+import pkg_resources
 import pytz
 import six
 
@@ -122,7 +123,16 @@ def run(options):
         schema=build_schema(),
         write_disposition=io.BigQueryDisposition.WRITE_TRUNCATE,
         create_disposition=io.BigQueryDisposition.CREATE_IF_NEEDED,
-        additional_bq_parameters={'timePartitioning': {'type': 'DAY'}})
+        additional_bq_parameters={
+            'description': f"""
+                Table of all encounters produced from 2012 to now. One row per encounter.
+                * Pipeline: encounters_pipeline {pkg_resources.get_distribution("encounters").version}
+                * Source tables: {merge_options.raw_table},
+                {merge_options.spatial_measures_table},
+                {merge_options.vessel_id_tables}
+            """,
+            'timePartitioning': {'type': 'DAY'}
+        })
 
 
     start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)

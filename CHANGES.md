@@ -17,6 +17,7 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
   Add encounter-id to merged encounters that is also picked up by voyages.
   This is based off both tracks_ids, plus start and end time.
   Add start / end lat/lon to encounter events
+  Updates the schema fields description and table description for raw_encounters and encounters.
 
 ### Removed
 
