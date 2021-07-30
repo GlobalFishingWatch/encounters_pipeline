@@ -10,7 +10,7 @@ class MergeOptions(PipelineOptions):
         required = parser.add_argument_group('Required')
         optional = parser.add_argument_group('Optional')
 
-        required.add_argument('--raw_table', required=True, 
+        required.add_argument('--raw_table', required=True,
                             help='Table to pull raw (unmerged) encounters to')
         required.add_argument('--vessel_id_table',  required=True, action='append', dest='vessel_id_tables',
                             help='Name of table mapping vessel_id to seg_id (BQ). '
@@ -18,23 +18,20 @@ class MergeOptions(PipelineOptions):
                             ' May be prefixed by "{ID}::" to prefix '
                             'the seg_id with {ID}. This is useful for applying to multiple sources '
                             '(e.g., AIS/VMS) while ensuring the seg_ids stay distinct.')
-        required.add_argument('--sink_table',
-                            help='Table to write file, merged and filtered encounters to')      
-        required.add_argument('--start_date', required=True, 
+        required.add_argument('--sink_table', required=True,
+                            help='Table to write file, merged and filtered encounters to')
+        required.add_argument('--start_date', required=True,
                               help="First date to merge.")
-        required.add_argument('--end_date', required=True, 
+        required.add_argument('--end_date', required=True,
                             help="Last date (inclusive) to merge.")
         required.add_argument('--spatial_measures_table', required=True, 
-                            help="Table to pull distance from shore from.")
-        required.add_argument('--distance_from_port_table', required=True, 
-                            help="Table to pull distance from port from.")
-
+                            help="Table to pull distance from shore and port from.")
         optional.add_argument('--wait', action='store_true',
                             help='Wait for Dataflow to complete.')
-        required.add_argument('--min_encounter_time_minutes', required=False, type=float,
+        optional.add_argument('--min_encounter_time_minutes', required=False, type=float,
                             help="Minimum minutes of vessel adjacency before we have an encounter.\n"
                                   "Does not have an effect if lower than value used in the create pipeline")
-        required.add_argument('--min_hours_between_encounters', required=False, type=float, default=4,
+        optional.add_argument('--min_hours_between_encounters', required=False, type=float, default=4,
                             help="Minimum hours between two encounters before merging them")
         optional.add_argument('--bad_segs_table', 
                             help='table of containing segment ids of bad segments')

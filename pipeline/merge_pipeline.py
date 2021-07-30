@@ -17,6 +17,7 @@ from pipeline.schemas.output import build as build_schema
 
 import datetime
 import logging
+import numpy as np
 import pytz
 import six
 
@@ -32,9 +33,10 @@ def create_queries(args, start_date, end_date):
     WITH
 
     raw_encounters as (
-        SELECT * except (start_time, end_time, encounter_id), -- TODO: do raw_encounters need an id?
+        SELECT * except (start_time, end_time, encounter_id), 
                 CAST(UNIX_MICROS(start_time) AS FLOAT64) / 1000000 AS start_time,
-                CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time
+                CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time,
+                format("lon:%+07.2f_lat:%+07.2f", mean_longitude, mean_latitude) as gridcode,
         FROM `{raw_table}*` events
         WHERE _table_suffix BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' 
           {condition}
@@ -44,15 +46,17 @@ def create_queries(args, start_date, end_date):
         {vessel_id_query}
     )
 
-    SELECT raw_encounters.*,
+    SELECT raw_encounters.* except(gridcode),
             vid1.vessel_id as vessel_1_id,
-            vid2.vessel_id as vessel_2_id
+            vid2.vessel_id as vessel_2_id,
+            distance_from_shore_m, distance_from_port_m
     FROM raw_encounters
     JOIN vessel_ids as vid1
     ON vessel_1_seg_id = vid1.seg_id
     JOIN vessel_ids as vid2
     ON vessel_2_seg_id = vid2.seg_id
-
+    JOIN  `{spatial_measures_table}`
+    USING (gridcode)
     """
     if args.bad_segs_table is None:
         condition = ''
@@ -80,30 +84,27 @@ def create_queries(args, start_date, end_date):
         query = template.format(raw_table=args.raw_table, 
                                 condition=condition,
                                 vessel_id_query=vessel_id_query,
-                                start=start_window, end=end_window)
+                                start=start_window, end=end_window,
+                                spatial_measures_table=args.spatial_measures_table)
         yield query
         start_window = end_window + datetime.timedelta(days=1)
 
 
 
-def filter_by_distance(x, min_distance_from_port_km):
-    grid_code, mapping = x
-    encounters = mapping['raw_encounters']
-    distance_sets = list(mapping['distances'])
-    if not distance_sets:
-        logging.warning(f'including encounters with no distance info at {grid_code}')
-        return encounters
-    assert len(distance_sets) == 1, len(distance_sets)
-    [distances] = distance_sets
-    if distances['distance_from_port_m'] < min_distance_from_port_km * 1000:
+def filter_by_distance(obj, min_distance_from_port_km):
+    distance_from_shore_m = obj.pop('distance_from_shore_m')
+    distance_from_port_m = obj.pop('distance_from_port_m')
+    if distance_from_port_m < min_distance_from_port_km * 1000:
         return []
-    if distances['distance_from_shore_m'] <= 0:
+    elif distance_from_shore_m <= 0:
         return []
-    return encounters
+    return [obj]
 
 def tag_with_gridcode(x):
-    gc = f"lon:{round(x.mean_longitude, 2):+07.2f}_lat:{round(x.mean_latitude, 2):+07.2f}"
-    return (gc.replace('-000.00', '+000.00'), x)
+    lat = np.clip(x.mean_latitude, -89.99, 89.99)
+    gc = f"lon:{round(x.mean_longitude, 2):+07.2f}_lat:{round(lat, 2):+07.2f}"
+    gc = gc.replace('-000.00', '+000.00').replace('+180.00', '-180.00')
+    return (gc, x)
 
 def run(options):
 
@@ -112,17 +113,8 @@ def run(options):
     merge_options = options.view_as(MergeOptions)
 
     dists_query = f"""
-    with dfport as (
-        select format("lon:%+07.2f_lat:%+07.2f", lon, lat) as gridcode, 
-               avg(distance_from_port_m) distance_from_port_m
-        from `{merge_options.distance_from_port_table}`
-        group by gridcode
-    )
-
     select gridcode, distance_from_shore_m, distance_from_port_m
     from `{merge_options.spatial_measures_table}`
-    join dfport
-    using (gridcode)
     """
 
     writer = io.WriteToBigQuery(
@@ -130,7 +122,7 @@ def run(options):
         schema=build_schema(),
         write_disposition=io.BigQueryDisposition.WRITE_TRUNCATE,
         create_disposition=io.BigQueryDisposition.CREATE_IF_NEEDED,
-        additional_bq_parameters={'timePartitioning': {'type': 'DAY'}})
+        additional_bq_parameters={ 'timePartitioning': {'type': 'DAY'} })
 
 
     start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
@@ -142,22 +134,11 @@ def run(options):
                             use_standard_sql=True)))
                     for (i, x) in enumerate(queries)]
 
-    raw_encounters = (sources
+    merged = (sources
         | Flatten()
         | "CombineSegVesselIds" >> Map(combine_ids)
-        | RawEncounter.FromDict()
-    )
-
-    distances = (p
-        | io.Read(io.gcp.bigquery.BigQuerySource(query=dists_query, use_standard_sql=True))
-        | Map(lambda x : (x['gridcode'], x))
-    )
-
-    tagged  = raw_encounters | Map(tag_with_gridcode)
-
-    merged = ({'raw_encounters' : tagged, 'distances' : distances}
-        | CoGroupByKey()
         | FlatMap(filter_by_distance, min_distance_from_port_km=10)
+        | RawEncounter.FromDict()
         | MergeEncounters(min_hours_between_encounters=merge_options.min_hours_between_encounters)
     )
 

@@ -116,7 +116,7 @@ def run(options):
                 write_disposition="WRITE_TRUNCATE",
                 schema=build_raw_encounter(),
                 project=cloud_options.project
-                )
+            )
 
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
                                                                                   use_standard_sql=True)))
