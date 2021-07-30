@@ -24,7 +24,6 @@ from pipeline.transforms.writers import WriteToBq
 
 import datetime
 import logging
-import pkg_resources
 import pytz
 import six
 
