@@ -14,7 +14,7 @@ def build():
     builder.add("start_lat", "FLOAT", description="The beginning latitude where the encounter takes place.")
     builder.add("start_lon", "FLOAT", description="The beginning longitude where the encounter takes place.")
     builder.add("end_lat", "FLOAT", description="The end latitude where the encounter finished.")
-    builder.add("end_lon", "FLOAT", description="The end latitude where the encounter finished.")
+    builder.add("end_lon", "FLOAT", description="The end longitude where the encounter finished.")
     for v in [1, 2]:
         builder.add(f"vessel_{v}_id", "STRING", description=f"The vessel id of the vessel {v}.")
         builder.add(f"vessel_{v}_seg_ids", "STRING", mode="REPEATED", description=f"The segment id of the vessel {v}.")
@@ -43,7 +43,7 @@ def build_raw_encounter():
     builder.add("start_lat", "FLOAT", description="The beginning latitude where the encounter takes place.")
     builder.add("start_lon", "FLOAT", description="The beginning longitude where the encounter takes place.")
     builder.add("end_lat", "FLOAT", description="The end latitude where the encounter finished.")
-    builder.add("end_lon", "FLOAT", description="The end latitude where the encounter finished.")
+    builder.add("end_lon", "FLOAT", description="The end longitude where the encounter finished.")
     for v in [1, 2]:
         builder.add(f"vessel_{v}_seg_id", "STRING", description=f"The segment id of the vessel {v}.")
         builder.add(f"vessel_{v}_point_count", "INTEGER", description=f"The amount of the points of contact during encounter by vessel {v}.")
