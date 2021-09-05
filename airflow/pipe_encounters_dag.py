@@ -139,6 +139,7 @@ class PipeEncountersDagFactory(DagFactory):
                         sink_table='{project_id}:{pipeline_dataset}.{encounters_table}'.format(**config),
                         vessel_id_table='{source_dataset}.{segment_info}'.format(**config),
                         spatial_measures_table='{spatial_measures_source}'.format(**config),
+                        bad_segs_table='(SELECT DISTINCT seg_id FROM {research_aggregated_segments_table} WHERE overlapping_and_short)'.format(**config),
 
                         # GoogleCloud options
                         project=config['project_id'],

@@ -9,6 +9,13 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 ## [Unreleased]
 
 
+## v3.2.1 - 2021-09-03
+
+### Added
+
+* [PIPELINE-509](https://globalfishingwatch.atlassian.net/browse/PIPELINE-509):
+  Adds the drop of overlapping and short segments when merging encounters.
+
 ## v3.2.0 - 2021-07-16
 
 ### Added
