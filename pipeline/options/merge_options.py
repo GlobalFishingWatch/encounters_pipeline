@@ -24,18 +24,18 @@ class MergeOptions(PipelineOptions):
                               help="First date to merge.")
         required.add_argument('--end_date', required=True,
                             help="Last date (inclusive) to merge.")
-        required.add_argument('--spatial_measures_table', required=True, 
+        required.add_argument('--spatial_measures_table', required=True,
                             help="Table to pull distance from shore and port from.")
-        optional.add_argument('--wait', action='store_true',
+        optional.add_argument('--wait_for_job', action='store_true',
                             help='Wait for Dataflow to complete.')
         optional.add_argument('--min_encounter_time_minutes', required=False, type=float,
                             help="Minimum minutes of vessel adjacency before we have an encounter.\n"
                                   "Does not have an effect if lower than value used in the create pipeline")
         optional.add_argument('--min_hours_between_encounters', required=False, type=float, default=4,
                             help="Minimum hours between two encounters before merging them")
-        optional.add_argument('--bad_segs_table', 
+        optional.add_argument('--bad_segs_table',
                             help='table of containing segment ids of bad segments')
-        optional.add_argument('--ssvid_filter', 
+        optional.add_argument('--ssvid_filter',
                             help='Subquery or list of ssvid to limit processing to.\n'
                                  'If prefixed by @, load from given path')
-   
+
