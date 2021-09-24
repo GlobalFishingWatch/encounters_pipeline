@@ -9,6 +9,13 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 ## [Unreleased]
 
 
+## v3.2.2 - 2021-09-23
+
+### Added
+
+* [PIPELINE-544](https://globalfishingwatch.atlassian.net/browse/PIPELINE-544): Changes
+  renaming the `wait` option to `wait_for_job` to avoid bad inference coming from dataflow.
+
 ## v3.2.1 - 2021-09-03
 
 ### Added

@@ -143,7 +143,7 @@ def run(options):
 
     success_states = set([PipelineState.DONE])
 
-    if create_options.wait or options.view_as(StandardOptions).runner == 'DirectRunner':
+    if create_options.wait_for_job or options.view_as(StandardOptions).runner == 'DirectRunner':
         result.wait_until_finish()
     else:
         success_states.add(PipelineState.RUNNING)
