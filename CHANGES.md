@@ -9,6 +9,15 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 ## [Unreleased]
 
 
+## v3.3.0 - 2022-03-08
+
+### Added
+
+* [PIPELINE-808](https://globalfishingwatch.atlassian.net/browse/PIPELINE-808): Adds
+  Dockerfile for scheduler and worker, to diferentiate the requirements in both cases.
+  Prepared the cloudbuild.
+  Changes when GroupByKey is done, new version of Beam needs typehint and Coder, solving using str.
+
 ## v3.2.2 - 2021-09-23
 
 ### Added

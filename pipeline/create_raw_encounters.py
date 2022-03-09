@@ -7,6 +7,7 @@ from pipeline.options.create_options import CreateOptions
 
 from apache_beam.options.pipeline_options import PipelineOptions
 
+import sys
 
 def run(args):
     options = validate_options(args=args, option_classes=[LoggingOptions, CreateOptions])
@@ -17,13 +18,9 @@ def run(args):
 
     return create_raw_pipeline.run(options)
 
+def main(args):
+    sys.exit(run(args))
 
 if __name__ == '__main__':
-    import sys
-    sys.exit(run(args=sys.argv))
-
-
-
-
-
+    main(sys.argv)
 

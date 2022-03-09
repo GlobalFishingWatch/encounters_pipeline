@@ -19,7 +19,7 @@ class GroupById(PTransform):
 class GroupByIdAndDate(PTransform):
 
     def tag_with_id(self, value):
-        return ((value.id, value.timestamp.date()), value)
+        return (f'{value.id}_{value.timestamp.date()}', value)
 
     def expand(self, xs):
         return (

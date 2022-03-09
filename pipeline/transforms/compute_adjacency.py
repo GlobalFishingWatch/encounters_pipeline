@@ -82,7 +82,7 @@ class ComputeAdjacency(PTransform):
                                   **rcd1._asdict())
 
     def tag_with_time(self, item):
-        return (item.timestamp, item)
+        return (item.timestamp.isoformat(), item)
 
 
     def expand(self, xs):

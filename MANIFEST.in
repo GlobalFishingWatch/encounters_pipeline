@@ -3,6 +3,7 @@ include CHANGES.md
 include MANIFEST.in
 include README.md
 include setup.py
-include requirements.txt
-recursive-include  assets *
-recursive-include pipeline/data *
+include requirements-sheduler.txt
+include requirements-worker.txt
+recursive-include assets *
+recursive-include pipeline *
