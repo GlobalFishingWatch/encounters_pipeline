@@ -2,7 +2,7 @@
 Apache Beam pipeline for computing vessel encounters.
 """
 
-__version__ = '3.2.2'
+__version__ = '3.3.0'
 __author__ = 'Global Fishing Watch'
 __email__ = 'info@globalfishingwatch.org'
 __source__ = 'https://github.com/GlobalFishingWatch/anchorages_pipeline'

@@ -116,7 +116,7 @@ class ComputeEncounters(PTransform):
         yield from self._create_valid_encounters(adjacency_runs, set())
 
     def tag_with_id(self, item):
-        return ((item.id, item.timestamp.date()), item)
+        return (f'{item.id}_{item.timestamp.date()}', item)
 
     def sort_by_time(self, item):
         key, value = item

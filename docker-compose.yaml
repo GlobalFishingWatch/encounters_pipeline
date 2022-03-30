@@ -1,41 +1,35 @@
 version: '2'
 services:
   pipe_encounters:
+    build:
+      context: .
+      dockerfile: Dockerfile-scheduler
     image: gfw/pipe-encounters
-    build: .
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
 
   create_raw_encounters:
+    build:
+      context: .
+      dockerfile: Dockerfile-scheduler
+    image: gfw/pipe-encounters
+    volumes:
+      - ".:/opt/project"
+      - "gcp:/root/.config/"
     entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]
-    image: gfw/pipe-encounters
-    build: .
-    volumes:
-      - ".:/opt/project"
-      - "gcp:/root/.config/"
+
   merge_encounters:
+    build:
+      context: .
+      dockerfile: Dockerfile-scheduler
+    image: gfw/pipe-encounters
+    volumes:
+      - ".:/opt/project"
+      - "gcp:/root/.config/"
     entrypoint: ["python", "-m", "pipeline.merge_encounters"]
-    image: gfw/pipe-encounters
-    build: .
-    volumes:
-      - ".:/opt/project"
-      - "gcp:/root/.config/"
-  test:
-    entrypoint: "py.test"
-    image: gfw/pipe-encounters
-    build: .
-    volumes:
-      - ".:/opt/project"
-      - "gcp:/root/.config/"
-  bash:
-    image: gfw/pipe-encounters
-    build: .
-    entrypoint: /bin/bash
-    volumes:
-      - ".:/opt/project"
-      - "gcp:/root/.config/"
 
 volumes:
   gcp:
     external: True
+
