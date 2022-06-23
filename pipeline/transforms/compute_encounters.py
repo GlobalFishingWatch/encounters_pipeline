@@ -48,8 +48,13 @@ class ComputeEncounters(PTransform):
         if encounter_duration < datetime.timedelta(minutes=self.min_minutes_for_encounter):
             return
 
-        implied_speeds = [implied_speed_mps(rcd1a, rcd1b) for 
-                        ((rcd1a, rcd2a, dista), (rcd1b, rcd2b, distb)) in pairwise(adjacency_run)]
+        try:
+            implied_speeds = [implied_speed_mps(rcd1a, rcd1b) for 
+                            ((rcd1a, rcd2a, dista), (rcd1b, rcd2b, distb)) in pairwise(adjacency_run)]
+        except ZeroDivisionError:
+            rcd1, rcd2, _ = adjacency_run[0]
+            logging.warning("computing implied speeds failed for"
+                f"{rcd1.id}, {rcd2.id} over {start_time}, {end_time})")
 
 
         median_distance_km = median(dist for (rcd1, rcd2, dist) in adjacency_run)
