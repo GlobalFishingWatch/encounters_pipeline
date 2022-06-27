@@ -9,6 +9,14 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 ## [Unreleased]
 
 
+## v3.3.1 - 2022-06-27
+
+### Added
+
+* [PIPELINE-932](https://globalfishingwatch.atlassian.net/browse/PIPELINE-932): Adds
+  Fix to ensure that each neighbor is only added once.
+  Adds asserts to make sure no duplicates appears.
+
 ## v3.3.0 - 2022-03-08
 
 ### Added
