@@ -1,14 +1,12 @@
-from apache_beam import PTransform
-from apache_beam import Map
-from apache_beam import FlatMap
-from apache_beam import GroupByKey
 import bisect
 import logging
 import math
 from collections import defaultdict
-from ..objects.annotated_record import AnnotatedRecord
 
 import s2sphere
+from apache_beam import FlatMap, GroupByKey, Map, PTransform
+
+from ..objects.annotated_record import AnnotatedRecord
 
 inf = float("inf")
 
@@ -43,9 +41,8 @@ class ComputeAdjacency(PTransform):
         assert max_adjacency_distance_km < 2 * APPROX_ENCOUNTERS_S2_SIZE_KM
 
     def compute_distances(self, records):
-        assert len(records) == len(set(x.id for x in records))
-        records = list(set(records))
-        assert len(records) == len(set(x.id for x in records))
+        # Sort records by ID to ensure stability
+        records = sorted(records, key=lambda x: x.id)
         # Build up a list of all plausible neighbors using S2ids.
         # A plausible neighbor for a given cell is a vessel in
         # that cell or any surrounding cell.
@@ -92,7 +89,8 @@ class ComputeAdjacency(PTransform):
             )
 
     def tag_with_time(self, item):
-        return (item.timestamp.timestamp(), item)
+        return (item.timestamp.isoformat(), item)
+        # return (item.timestamp.timestamp(), item)
 
     def expand(self, xs):
         return (
