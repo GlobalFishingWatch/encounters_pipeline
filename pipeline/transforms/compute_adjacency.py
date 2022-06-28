@@ -65,7 +65,7 @@ class ComputeAdjacency(PTransform):
         for i, (token, rcd1) in enumerate(tagged_records):
             closest_dists = []
             closest_nbrs = []
-            for j in s2_to_ndxs[token]:
+            for j in sorted(s2_to_ndxs[token]):
                 if i == j:
                     continue
                 rcd2 = records[j]
@@ -89,8 +89,7 @@ class ComputeAdjacency(PTransform):
             )
 
     def tag_with_time(self, item):
-        return (item.timestamp.isoformat(), item)
-        # return (item.timestamp.timestamp(), item)
+        return (item.timestamp.timestamp(), item)
 
     def expand(self, xs):
         return (
