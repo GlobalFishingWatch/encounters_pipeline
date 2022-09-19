@@ -26,9 +26,9 @@ def test_create_queries_1():
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM
-        `SOURCE_DATASET*`
+        `SOURCE_DATASET`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20160101' AND '20160101'
+        date(timestamp) BETWEEN '2016-01-01' AND '2016-01-01'
     """]]
 
 def test_create_queries_2():
@@ -42,9 +42,9 @@ def test_create_queries_2():
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM
-        `SOURCE_DATASET*`
+        `SOURCE_DATASET`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20120501' AND '20150125'
+        date(timestamp) BETWEEN '2012-05-01' AND '2015-01-25'
     """,
     """
     SELECT
@@ -55,7 +55,7 @@ def test_create_queries_2():
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("", seg_id) AS id
     FROM
-        `SOURCE_DATASET*`
+        `SOURCE_DATASET`
     WHERE
-        _TABLE_SUFFIX BETWEEN '20150126' AND '20170515'
+        date(timestamp) BETWEEN '2015-01-26' AND '2017-05-15'
     """]]

@@ -92,7 +92,7 @@ are added with each run.
 
 
         docker-compose run create_raw_encounters \
-                --source_table pipe_production_v20201001.position_messages_ \
+                --source_table pipe_production_v20201001.position_messages \
                 --start_date 2018-01-01 \
                 --end_date 2018-01-31 \
                 --max_encounter_dist_km 0.5 \
