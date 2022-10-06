@@ -34,18 +34,18 @@ class SortByTime(PTransform):
             records_at_t = time_map[t]
             id_ = records_at_t[0].id
             assert [x.id == id_ for x in records_at_t]
-            speed = median(x.speed for x in records_at_t if x is not None)
+            speed = median(x.speed for x in records_at_t if x.speed is not None)
             course = math.degrees(
                 math.atan2(
                     median(
                         math.sin(math.radians(x.course))
                         for x in records_at_t
-                        if x is not None
+                        if x.course is not None
                     ),
                     median(
                         math.cos(math.radians(x.course))
                         for x in records_at_t
-                        if x is not None
+                        if x.course is not None
                     ),
                 )
             )
