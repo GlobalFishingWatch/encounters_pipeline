@@ -35,28 +35,26 @@ class SortByTime(PTransform):
             id_ = records_at_t[0].id
             assert [x.id == id_ for x in records_at_t]
             speed = median(x.speed for x in records_at_t if x.speed is not None)
-            course = math.degrees(
-                math.atan2(
-                    median(
-                        math.sin(math.radians(x.course))
-                        for x in records_at_t
-                        if x.course is not None
-                    ),
-                    median(
-                        math.cos(math.radians(x.course))
-                        for x in records_at_t
-                        if x.course is not None
-                    ),
-                )
+            sin_course = median(
+                math.sin(math.radians(x.course))
+                for x in records_at_t
+                if x.course is not None
+            )
+            cos_course = median(
+                math.cos(math.radians(x.course))
+                for x in records_at_t
+                if x.course is not None
             )
 
             if speed is None:
                 continue
-            if course is None:
+            if cos_course is None or sin_course is None:
                 if speed <= very_slow:
                     course = 0.0
                 else:
                     continue
+            else:
+                course = math.atan2(sin_course, cos_course)
 
             rcd = Record(
                 id=id_,
