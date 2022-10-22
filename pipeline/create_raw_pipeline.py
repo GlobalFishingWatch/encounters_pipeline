@@ -44,9 +44,9 @@ def create_queries(args):
       UNIX_MILLIS(timestamp) / 1000.0  AS timestamp,
       CONCAT("{id_prefix}", seg_id) AS id
     FROM
-        `{position_table}*`
+        `{position_table}`
     WHERE
-        _TABLE_SUFFIX BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}'
+        date(timestamp) BETWEEN '{start:%Y-%m-%d}' AND '{end:%Y-%m-%d}'
         {condition}
     """
     if args.ssvid_filter is None:
