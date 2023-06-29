@@ -1,3 +1,2 @@
 s2sphere==0.2.5
-ujson==1.35
 statistics==1.0.3.5
