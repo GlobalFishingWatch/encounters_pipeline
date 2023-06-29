@@ -10,13 +10,13 @@ import six
 from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
-from pipe_tools.utils.test import approx_equal_to as equal_to
 from pipeline.objects import encounter, record
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.resample import Resample
+from pipeline.utils.test import approx_equal_to as equal_to
 
 from .series_data import (dateline_series_data, fastsep_series_data,
                           multi_series_data, real_series_data,

@@ -1,7 +1,6 @@
-# Suppress a spurious warning that happens when you import apache_beam
-from pipe_tools.beam import logging_monkeypatch
-from pipe_tools.options import validate_options
-from pipe_tools.options import LoggingOptions
+from pipeline.options import logging_monkeypatch
+from pipeline.options import validate_options
+from pipeline.options import LoggingOptions
 
 from pipeline.options.create_options import CreateOptions
 

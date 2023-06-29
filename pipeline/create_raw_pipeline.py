@@ -8,7 +8,6 @@ from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 from apache_beam.transforms.window import TimestampedValue
 
-from pipe_tools.io import WriteToBigQueryDateSharded
 from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
 from pipeline.schemas.output import build_raw_encounter
@@ -16,16 +15,12 @@ from pipeline.schemas.utils import schema_to_obj
 from pipeline.transforms.add_id import AddRawEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
-from pipeline.transforms.create_timestamped_adjacencies import CreateTimestampedAdjacencies
-from pipeline.transforms.group_by_id import GroupById
 from pipeline.transforms.resample import Resample
-from pipeline.transforms.sort_by_time import SortByTime
-from pipeline.transforms.writers import WriteToBq
+from pipeline.transforms.write_date_sharded import WriteDateSharded
 
 import datetime
 import logging
 import pytz
-import six
 
 
 
@@ -110,13 +105,11 @@ def run(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
-    writer = WriteToBigQueryDateSharded(
-                temp_gcs_location=cloud_options.temp_location,
-                table=create_options.raw_table,
-                write_disposition="WRITE_TRUNCATE",
-                schema=build_raw_encounter(),
-                project=cloud_options.project
-            )
+    writer = WriteDateSharded(
+        cloud_options,
+        create_options,
+        build_raw_encounter()
+    )
 
     sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
                                                                                   use_standard_sql=True)))
