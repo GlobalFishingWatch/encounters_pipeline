@@ -1,4 +1,4 @@
-# Encounters pipeline 
+# Encounters pipeline
 
 This repository contains the encounters pipeline, which finds vessel encounters
 based on AIS messages.
@@ -17,10 +17,9 @@ The pipeline reads it's input from BigQuery, so you need to first authenticate
 with your google cloud account inside the docker images. To do that, you need
 to run this command and follow the instructions:
 
-TODO: used global GCP volume now: add correct instructions for that.
 
 ```
-docker-compose run gcloud auth application-default login
+docker compose run --entrypoint gcloud pipe_enocunters auth application-default login
 ```
 
 ## Overview
@@ -36,7 +35,7 @@ one long encounter and *replacing* the table specified in `sink` with the merged
 ## CLI
 
 The pipeline includes a CLI that can be used to start both local test runs and
-remote full runs. Just run `docker-compose run pipeline --help` and follow the
+remote full runs. Just run `docker compose run pipe_encounters --help` and follow the
 instructions there.
 
 ### Examples:
