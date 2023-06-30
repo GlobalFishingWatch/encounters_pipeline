@@ -1,4 +1,3 @@
-from apache_beam.io.gcp.internal.clients import bigquery
 from .utils import SchemaBuilder
 
 def build():

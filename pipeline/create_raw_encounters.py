@@ -1,19 +1,15 @@
 from pipeline.options import logging_monkeypatch
-from pipeline.options import validate_options
-from pipeline.options import LoggingOptions
-
+from pipeline.options.validate_options import validate_options
+from pipeline.options.logging_options import LoggingOptions
 from pipeline.options.create_options import CreateOptions
-
+from pipeline import create_raw_pipeline
 from apache_beam.options.pipeline_options import PipelineOptions
-
 import sys
 
 def run(args):
     options = validate_options(args=args, option_classes=[LoggingOptions, CreateOptions])
 
     options.view_as(LoggingOptions).configure_logging()
-
-    from pipeline import create_raw_pipeline
 
     return create_raw_pipeline.run(options)
 
