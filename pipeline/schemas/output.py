@@ -3,7 +3,6 @@ from .utils import SchemaBuilder
 def build():
 
     builder = SchemaBuilder()
-
     builder.add("encounter_id", "STRING", description="Unique encounter ID.")
     builder.add("start_time", "TIMESTAMP", description="The start timestamp of the encounter (UTC).")
     builder.add("end_time", "TIMESTAMP", description="The end timestamp of the encounter (UTC).")
@@ -23,16 +22,9 @@ def build():
     return builder.schema
 
 
-    builder.add("events", mode="REPEATED", 
-        schema_type=build_port_event_schema().fields,
-        description="sequence of port events that occurred during visit"
-    )
-
-
 def build_raw_encounter():
 
     builder = SchemaBuilder()
-
     builder.add("encounter_id", "STRING", description="Unique encounter ID.")
     builder.add("start_time", "TIMESTAMP", description="The start timestamp of the encounter (UTC).")
     builder.add("end_time", "TIMESTAMP", description="The end timestamp of the encounter (UTC).")

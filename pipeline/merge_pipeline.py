@@ -5,6 +5,7 @@ from apache_beam import FlatMap
 from apache_beam import Map
 from apache_beam import Pipeline
 from apache_beam import io
+from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 
@@ -12,7 +13,8 @@ from pipeline.objects.encounter import Encounter, RawEncounter
 from pipeline.options.merge_options import MergeOptions
 from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
-from pipeline.transforms.writers import WriteToBq
+from pipeline.transforms.readers import ReadSources
+from pipeline.transforms.writers import WriteEncountersToBQ
 from pipeline.schemas.output import build as build_schema
 
 import datetime
@@ -112,28 +114,24 @@ def run(options):
     p = Pipeline(options=options)
 
     merge_options = options.view_as(MergeOptions)
+    cloud_options = options.view_as(GoogleCloudOptions)
 
     dists_query = f"""
     select gridcode, distance_from_shore_m, distance_from_port_m
     from `{merge_options.spatial_measures_table}`
     """
 
-    writer = io.WriteToBigQuery(
-        merge_options.sink_table,
-        schema=build_schema(),
-        write_disposition=io.BigQueryDisposition.WRITE_TRUNCATE,
-        create_disposition=io.BigQueryDisposition.CREATE_IF_NEEDED,
-        additional_bq_parameters={ 'timePartitioning': {'type': 'DAY'} })
-
-
     start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(merge_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
     queries = create_queries(merge_options, start_date, end_date)
 
-    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x,
-                            use_standard_sql=True)))
-                    for (i, x) in enumerate(queries)]
+    sources = [
+        (p | f"Read_{i}" >> ReadSources(
+            query=query,
+            options=cloud_options
+        )) for (i, query) in enumerate(queries)
+    ]
 
     merged = (sources
         | Flatten()
@@ -150,6 +148,8 @@ def run(options):
                                 merge_options.min_encounter_time_minutes)
         )
 
+    writer = WriteEncountersToBQ(merge_options, cloud_options)
+
     merged = (merged
         | "FilteredToDicts" >> Encounter.ToDict()
         | AddEncounterId()
@@ -162,6 +162,9 @@ def run(options):
 
     if merge_options.wait_for_job or options.view_as(StandardOptions).runner == 'DirectRunner':
         result.wait_until_finish()
+        if result.state in success_states:
+            writer.update_table_description()
+            writer.update_labels()
     else:
         success_states.add(PipelineState.RUNNING)
         success_states.add(PipelineState.UNKNOWN)

@@ -2,7 +2,6 @@ from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import Map
 from apache_beam import Pipeline
-from apache_beam import io
 from apache_beam.options.pipeline_options import GoogleCloudOptions
 from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
@@ -10,6 +9,7 @@ from apache_beam.transforms.window import TimestampedValue
 
 from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
+from pipeline.options.create_options import CreateOptions
 from pipeline.schemas.output import build_raw_encounter
 from pipeline.schemas.utils import schema_to_obj
 from pipeline.transforms.add_id import AddRawEncounterId
@@ -17,6 +17,7 @@ from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.resample import Resample
 from pipeline.transforms.write_date_sharded import WriteDateSharded
+from pipeline.transforms.readers import ReadSources
 
 import datetime
 import logging
@@ -95,7 +96,6 @@ def check_schema(x, schema):
 
 
 def run(options):
-    from pipeline.options.create_options import CreateOptions
 
     p = Pipeline(options=options)
 
@@ -105,31 +105,28 @@ def run(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
-    writer = WriteDateSharded(
-        cloud_options,
-        create_options,
-        build_raw_encounter()
-    )
-
-    sources = [(p | "Read_{}".format(i) >> io.Read(io.gcp.bigquery.BigQuerySource(query=x, project=cloud_options.project,
-                                                                                  use_standard_sql=True)))
-                    for (i, x) in enumerate(create_queries(create_options))]
+    sources = [
+        (p | f"Read_{i}" >> ReadSources(
+            query=query,
+            options=cloud_options
+        )) for (i, query) in enumerate(create_queries(create_options))
+    ]
 
 
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
-        | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES, 
-                   max_gap_s = 60 * 60 * MAX_GAP_HOURS) 
-        | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km) 
-        | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km, 
-                            min_minutes_for_encounter=create_options.min_encounter_time_minutes) 
+        | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES,
+                   max_gap_s = 60 * 60 * MAX_GAP_HOURS)
+        | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km)
+        | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km,
+                            min_minutes_for_encounter=create_options.min_encounter_time_minutes)
         | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
         | RawEncounter.ToDict()
         | AddRawEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | Map(check_schema, schema=schema_to_obj(build_raw_encounter()))
-        | writer
+        | WriteDateSharded(cloud_options, create_options, build_raw_encounter())
     )
 
     result = p.run()
