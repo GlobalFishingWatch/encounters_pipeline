@@ -13,6 +13,7 @@ from apache_beam.testing.util import assert_that
 from .test_resample import Record
 from .test_resample import ResampledRecord
 from .series_data import simple_series_data
+from pipeline.options.create_options import CreateOptions
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms import resample
 from pipeline.objects import record
@@ -52,7 +53,16 @@ class TestComputeAdjacency(unittest.TestCase):
 
         tuple_data = [tuple(x) for x in simple_series_data]
 
-        with _TestPipeline() as p:
+        args = [
+            f"--source_table={tuple_data}",
+            "--raw_table=test",
+            "--start_date=2011-01-01",
+            "--end_date=2011-01-01",
+            "--max_encounter_dist_km=0.5",
+            "--min_encounter_time_minutes=120"
+        ]
+        opts = CreateOptions(args)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
                 | beam.Create(tuple_data)
