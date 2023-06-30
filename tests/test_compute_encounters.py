@@ -11,6 +11,7 @@ from apache_beam import Map
 from apache_beam.testing.test_pipeline import TestPipeline as _TestPipeline
 from apache_beam.testing.util import assert_that
 from pipeline.objects import encounter, record
+from pipeline.options.create_options import CreateOptions
 from pipeline.transforms import compute_adjacency
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
@@ -68,6 +69,20 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
         **record._asdict(),
     )
 
+def get_options(items:list):
+    tuple_data = [tuple(x) for x in items]
+    args = [
+        f"--source_table={tuple_data}",
+        "--raw_table=test",
+        "--start_date=2011-01-01",
+        "--end_date=2011-01-01",
+        "--max_encounter_dist_km=0.5",
+        "--min_encounter_time_minutes=120"
+    ]
+    return tuple_data, CreateOptions(args)
+
+
+
 
 @pytest.mark.filterwarnings("ignore:Using fallback coder:UserWarning")
 @pytest.mark.filterwarnings(
@@ -75,11 +90,11 @@ def TaggedAnnotatedRecord(vessel_id, record, neighbor_count, closest_neighbor):
 )
 class TestComputeEncounters(unittest.TestCase):
     def test_simple_encounters(self):
-
-        with _TestPipeline() as p:
+        items, opts = get_options(simple_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in simple_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -91,10 +106,11 @@ class TestComputeEncounters(unittest.TestCase):
             assert_that(results, equal_to(self._get_simple_expected()))
 
     def test_multi_encounters(self):
-        with _TestPipeline() as p:
+        items, opts = get_options(multi_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in multi_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -107,10 +123,11 @@ class TestComputeEncounters(unittest.TestCase):
 
     def test_nerfed_multi_encounters(self):
         """If we reduce the number of tracked distances we shouldn't get all of the encounters"""
-        with _TestPipeline() as p:
+        items, opts = get_options(multi_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in multi_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -124,10 +141,11 @@ class TestComputeEncounters(unittest.TestCase):
             assert_that(results, equal_to(self._get_nerfed_multi_expected()))
 
     def test_dateline_encounters(self):
-        with _TestPipeline() as p:
+        items, opts = get_options(dateline_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in dateline_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -146,10 +164,11 @@ class TestComputeEncounters(unittest.TestCase):
         extended encounter could be generated. However the current algorithm is not vulnerable
         to this.
         """
-        with _TestPipeline() as p:
+        items, opts = get_options(fastsep_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in fastsep_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -161,10 +180,11 @@ class TestComputeEncounters(unittest.TestCase):
             assert_that(results, equal_to([]))
 
     def test_real_data(self):
-        with _TestPipeline() as p:
+        items, opts = get_options(real_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in real_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -176,10 +196,11 @@ class TestComputeEncounters(unittest.TestCase):
             assert_that(results, equal_to(self._get_real_expected()))
 
     def test_message_generation(self):
-        with _TestPipeline() as p:
+        items, opts = get_options(real_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in real_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -192,10 +213,11 @@ class TestComputeEncounters(unittest.TestCase):
             assert_that(results, equal_to(self._get_messages_expected()))
 
     def test_merge_messages(self):
-        with _TestPipeline() as p:
+        items, opts = get_options(real_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in real_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
@@ -211,10 +233,11 @@ class TestComputeEncounters(unittest.TestCase):
 
     def test_merge_dateline(self):
 
-        with _TestPipeline() as p:
+        items, opts = get_options(dateline_series_data)
+        with _TestPipeline(options=opts) as p:
             results = (
                 p
-                | beam.Create([tuple(x) for x in dateline_series_data])
+                | beam.Create(items)
                 | beam.Map(lambda x: record.Record(*x))
                 | "Ensure ID is bytes" >> Map(ensure_bytes_id)
                 | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
