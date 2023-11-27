@@ -60,7 +60,7 @@ Created by the encounters_pipeline: {self.ver}
                 "timePartitioning": {
                     "type": "MONTH",
                     "field": "start_time",
-                    "requirePartitionFilter": True
+                    "requirePartitionFilter": False
                 },
                 "clustering": {
                     "fields": ["start_time"]
