@@ -90,7 +90,7 @@ def create_queries(args, start_date, end_date):
         start_window = end_window + datetime.timedelta(days=1)
 
 def filter_valid_coordinates(obj):
-    return obj['mean_latitude'] >= -89.99 and obj['mean_latitude'] <= 89.99
+    return -89.99 <= obj['mean_latitude'] <= 89.99
 
 def filter_by_distance(obj, min_distance_from_port_km):
     distance_from_shore_m = obj.pop('distance_from_shore_m')
