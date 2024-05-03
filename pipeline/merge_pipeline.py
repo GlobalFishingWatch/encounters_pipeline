@@ -89,7 +89,8 @@ def create_queries(args, start_date, end_date):
         yield query
         start_window = end_window + datetime.timedelta(days=1)
 
-
+def filter_valid_coordinates(obj):
+    return -89.99 <= obj['mean_latitude'] <= 89.99
 
 def filter_by_distance(obj, min_distance_from_port_km):
     distance_from_shore_m = obj.pop('distance_from_shore_m')
@@ -136,6 +137,7 @@ def run(options):
 
     merged = (sources
         | Flatten()
+        | "Filter valid coordinates" >> Filter(filter_valid_coordinates)
         | "CombineSegVesselIds" >> Map(combine_ids)
         | FlatMap(filter_by_distance, min_distance_from_port_km=10)
         | RawEncounter.FromDict()

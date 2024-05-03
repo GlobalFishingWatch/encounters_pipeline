@@ -8,6 +8,12 @@ Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 
 ## [Unreleased]
 
+## v3.4.1 - 2024-05-03
+
+### Changed
+
+* [PIPELINE-1960](https://globalfishingwatch.atlassian.net/browse/PIPELINE-1960): Filter 
+  raw encounters with valid coordinates.
 
 ## v3.3.2 - 2022-07-21
 
