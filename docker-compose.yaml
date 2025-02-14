@@ -1,6 +1,5 @@
-version: '2'
 services:
-  pipe_encounters:
+  dev:
     build:
       context: .
       dockerfile: Dockerfile-scheduler
@@ -8,28 +7,15 @@ services:
     volumes:
       - ".:/opt/project"
       - "gcp:/root/.config/"
-
-  create_raw_encounters:
+  gcloud:
+    image: gfw/pipe-segment
     build:
       context: .
       dockerfile: Dockerfile-scheduler
-    image: gfw/pipe-encounters
+    entrypoint: gcloud
     volumes:
-      - ".:/opt/project"
       - "gcp:/root/.config/"
-    entrypoint: ["python", "-m", "pipeline.create_raw_encounters"]
-
-  merge_encounters:
-    build:
-      context: .
-      dockerfile: Dockerfile-scheduler
-    image: gfw/pipe-encounters
-    volumes:
-      - ".:/opt/project"
-      - "gcp:/root/.config/"
-    entrypoint: ["python", "-m", "pipeline.merge_encounters"]
 
 volumes:
   gcp:
     external: True
-
