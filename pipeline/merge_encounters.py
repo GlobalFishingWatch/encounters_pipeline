@@ -1,21 +1,16 @@
-# Suppress a spurious warning that happens when you import apache_beam
-from pipe_tools.beam import logging_monkeypatch
-from pipe_tools.options import validate_options
-from pipe_tools.options import LoggingOptions
-
-from pipeline.options.merge_options import MergeOptions
-
 from apache_beam.options.pipeline_options import PipelineOptions
+from pipeline.options import logging_monkeypatch
+from pipeline.options.validate_options import validate_options
+from pipeline.options.logging_options import LoggingOptions
+from pipeline.options.merge_options import MergeOptions
+from pipeline import merge_pipeline
 
 import sys
-
 
 def run(args):
     options = validate_options(args=args, option_classes=[LoggingOptions, MergeOptions])
 
     options.view_as(LoggingOptions).configure_logging()
-
-    from pipeline import merge_pipeline
 
     return merge_pipeline.run(options)
 
