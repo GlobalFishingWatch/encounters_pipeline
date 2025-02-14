@@ -4,16 +4,19 @@ from pipeline.utils.ver import get_pipe_ver
 import apache_beam as beam
 import logging
 
-list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
+
+def list_to_dict(labels):
+    return {x.split("=")[0]: x.split("=")[1] for x in labels}
+
 
 class WriteEncountersToBQ(beam.PTransform):
 
-    def __init__(self, options:dict, cloud_opts: dict):
+    def __init__(self, options: dict, cloud_opts: dict):
         self.table = options.sink_table
         self.project = cloud_opts.project
         self.schema = output_schema()
-        self.write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE
-        self.create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+        self.write_disposition = beam.io.BigQueryDisposition.WRITE_TRUNCATE
+        self.create_disposition = beam.io.BigQueryDisposition.CREATE_IF_NEEDED
         self.vessel_id_tables = options.vessel_id_tables
         self.spatial_measures_table = options.spatial_measures_table
         self.min_hours_between_encounters = options.min_hours_between_encounters
@@ -23,7 +26,7 @@ class WriteEncountersToBQ(beam.PTransform):
         self.end_date = options.end_date
         self.labels = list_to_dict(cloud_opts.labels)
         self.bqclient = bigquery.Client(project=self.project)
-        dataset_id,table_name = self.table.split('.')
+        dataset_id, table_name = self.table.split(".")
         dataset_ref = bigquery.DatasetReference(self.project, dataset_id)
         self.table_ref = dataset_ref.table(table_name)
 
@@ -60,10 +63,8 @@ Created by the encounters_pipeline: {self.ver}
                 "timePartitioning": {
                     "type": "MONTH",
                     "field": "start_time",
-                    "requirePartitionFilter": False
+                    "requirePartitionFilter": False,
                 },
-                "clustering": {
-                    "fields": ["start_time"]
-                },
-            }
+                "clustering": {"fields": ["start_time"]},
+            },
         )
