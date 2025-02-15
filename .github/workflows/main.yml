@@ -44,6 +44,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements/test.txt
+          pip install -r requirements/prod.in
           pip install -e .
 
       - name: Test with pytest
