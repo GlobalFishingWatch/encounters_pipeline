@@ -1,10 +1,9 @@
-from pipeline.options import logging_monkeypatch
 from pipeline.options.validate_options import validate_options
 from pipeline.options.logging_options import LoggingOptions
 from pipeline.options.create_options import CreateOptions
 from pipeline import create_raw_pipeline
-from apache_beam.options.pipeline_options import PipelineOptions
 import sys
+
 
 def run(args):
     options = validate_options(args=args, option_classes=[LoggingOptions, CreateOptions])
@@ -13,9 +12,10 @@ def run(args):
 
     return create_raw_pipeline.run(options)
 
+
 def main(args):
     sys.exit(run(args))
 
-if __name__ == '__main__':
-    main(sys.argv)
 
+if __name__ == "__main__":
+    main(sys.argv)

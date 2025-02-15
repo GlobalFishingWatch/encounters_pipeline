@@ -18,7 +18,7 @@ def median(iterable):
     quotient, remainder = divmod(len(seq), 2)
     if remainder:
         return seq[quotient]
-    return sum(seq[quotient - 1 : quotient + 1]) / 2
+    return sum(seq[quotient - 1: quotient + 1]) / 2
 
 
 class SortByTime(PTransform):
@@ -36,14 +36,10 @@ class SortByTime(PTransform):
             assert [x.id == id_ for x in records_at_t]
             speed = median(x.speed for x in records_at_t if x.speed is not None)
             sin_course = median(
-                math.sin(math.radians(x.course))
-                for x in records_at_t
-                if x.course is not None
+                math.sin(math.radians(x.course)) for x in records_at_t if x.course is not None
             )
             cos_course = median(
-                math.cos(math.radians(x.course))
-                for x in records_at_t
-                if x.course is not None
+                math.cos(math.radians(x.course)) for x in records_at_t if x.course is not None
             )
 
             if speed is None:

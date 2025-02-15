@@ -1,0 +1,4 @@
+pip-tools~=7.4
+flake8~=7.0
+autopep8~=2.3.0
+black~=24.8.0

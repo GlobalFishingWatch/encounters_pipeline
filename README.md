@@ -1,7 +1,21 @@
-# Encounters pipeline
+<h1 align="center" style="border-bottom: none;"> Encounters pipeline </h1>
 
-This repository contains the encounters pipeline, which finds vessel encounters
-based on AIS messages.
+<p align="center">
+  <a href="https://codecov.io/gh/GlobalFishingWatch/encounters_pipeline" > 
+    <img alt="Coverage" src="https://codecov.io/gh/GlobalFishingWatch/encounters_pipeline/graph/badge.svg?token=XS7HTOWWYG"/> 
+  </a>
+  <a>
+    <img alt="Python versions" src="https://img.shields.io/badge/python-3.8%2C3.9%2C3.10%2C3.11-blue">
+  </a>
+  <a>
+    <img alt="Last release" src="https://img.shields.io/github/v/release/GlobalFishingWatch/encounters_pipeline">
+  </a>
+</p>
+
+This repository contains the implementation about how encounters are detected
+in the pipeline.  An encounter is defined between some limitations related to
+time and distance two vessels keeps together.  It usese the messages positions
+to reach the proximity and declare the encounter.
 
 # Running
 

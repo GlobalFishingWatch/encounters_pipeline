@@ -1,11 +1,10 @@
-from apache_beam.options.pipeline_options import PipelineOptions
-from pipeline.options import logging_monkeypatch
 from pipeline.options.validate_options import validate_options
 from pipeline.options.logging_options import LoggingOptions
 from pipeline.options.merge_options import MergeOptions
 from pipeline import merge_pipeline
 
 import sys
+
 
 def run(args):
     options = validate_options(args=args, option_classes=[LoggingOptions, MergeOptions])
@@ -18,6 +17,6 @@ def run(args):
 def main(args):
     sys.exit(run(args))
 
-if __name__ == '__main__':
-    main(sys.argv)
 
+if __name__ == "__main__":
+    main(sys.argv)
