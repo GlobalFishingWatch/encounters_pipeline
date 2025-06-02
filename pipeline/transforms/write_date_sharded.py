@@ -5,13 +5,15 @@ import datetime as dt
 import pytz
 
 
-datetimeFromTimestamp = lambda ts: dt.datetime.fromtimestamp(ts, tz=pytz.UTC)
+def datetimeFromTimestamp(ts):
+    return dt.datetime.fromtimestamp(ts, tz=pytz.UTC)
+
 
 class WriteDateSharded(beam.PTransform):
     def __init__(self, cloud_options, opts, schema, key="end_time"):
         self.project = cloud_options.project
         self.source = opts.source_tables
-        self.sink = opts.raw_table.split(':')[1]
+        self.sink = opts.raw_table.split(":")[1]
         print(self.sink)
         self.max_encounter_dist_km = opts.max_encounter_dist_km
         self.min_encounter_time_minutes = opts.min_encounter_time_minutes
@@ -28,11 +30,13 @@ class WriteDateSharded(beam.PTransform):
             "destinationTableProperties": {
                 "description": f"""
 Created by the encounters_pipeline: {self.ver}.
-* Creates raw encounters, reads the data from source and computes encounters over windows between start_date and end_date.
+* Creates raw encounters, reads the data from source and computes encounters
+over windows between start_date and end_date.
 * https://github.com/GlobalFishingWatch/encounters_pipeline
 * Sources: {self.source}
 * Maximum distance for vessels to be elegible (km): {self.max_encounter_dist_km}
-* Minimum minutes of vessel adjacency before we have an encounter: {self.min_encounter_time_minutes}
+* Minimum minutes of vessel adjacency before we have an encounter:
+{self.min_encounter_time_minutes}
 * Date range: {self.start_date}, {self.end_date}
             """,
             },
@@ -50,4 +54,3 @@ Created by the encounters_pipeline: {self.ver}.
             write_disposition=self.write_disposition,
             additional_bq_parameters=self.get_description(),
         )
-
