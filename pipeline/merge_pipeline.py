@@ -75,7 +75,6 @@ def create_queries(args, start_date, end_date):
             id_prefix += ':'
         else:
             id_prefix = ''
-        table = table.replace(':', '.')
         subqueries.append(f'SELECT CONCAT("{id_prefix}", seg_id) AS seg_id, vessel_id FROM {table}')
     vessel_id_query = '\nUNION ALL\n'.join(subqueries)
 
@@ -83,7 +82,7 @@ def create_queries(args, start_date, end_date):
     shift = 1000
     while start_window <= end_date:
         end_window = min(start_window + datetime.timedelta(days=shift), end_date)
-        query = template.format(raw_table=args.raw_table, 
+        query = template.format(raw_table=args.raw_table,
                                 condition=condition,
                                 vessel_id_query=vessel_id_query,
                                 start=start_window, end=end_window,
@@ -163,8 +162,7 @@ def run(options):
     if merge_options.wait_for_job or options.view_as(StandardOptions).runner == 'DirectRunner':
         result.wait_until_finish()
         if result.state in success_states:
-            writer.update_table_description()
-            writer.update_labels()
+            writer.update_table_metadata()
     else:
         success_states.add(PipelineState.RUNNING)
         success_states.add(PipelineState.UNKNOWN)
