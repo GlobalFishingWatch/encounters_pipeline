@@ -19,7 +19,7 @@ from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.resample import Resample
 from pipeline.utils.test import approx_equal_to as equal_to
 
-from .series_data import (dateline_series_data, fastsep_series_data,
+from .series_data import (cross_day_series_data, dateline_series_data, fastsep_series_data,
                           multi_series_data, real_series_data,
                           simple_series_data)
 from .test_resample import ResampledRecord
@@ -194,6 +194,45 @@ class TestComputeEncounters(unittest.TestCase):
                 )
             )
             assert_that(results, equal_to(self._get_real_expected()))
+
+    def test_cross_day_encounters(self):
+        """Test that encounters crossing midnight are detected with relaxed duration filter"""
+        items, opts = get_options(cross_day_series_data)
+        with _TestPipeline(options=opts) as p:
+            results = (
+                p
+                | beam.Create(items)
+                | beam.Map(lambda x: record.Record(*x))
+                | "Ensure ID is bytes" >> Map(ensure_bytes_id)
+                | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0)
+                | ComputeEncounters(
+                    max_km_for_encounter=0.5, min_minutes_for_encounter=120
+                )
+            )
+            assert_that(results, equal_to(self._get_cross_day_expected()))
+
+    def test_merge_cross_day_encounters(self):
+        """Test that cross-day encounters are properly merged across midnight boundary"""
+        items, opts = get_options(cross_day_series_data)
+        with _TestPipeline(options=opts) as p:
+            results = (
+                p
+                | beam.Create(items)
+                | beam.Map(lambda x: record.Record(*x))
+                | "Ensure ID is bytes" >> Map(ensure_bytes_id)
+                | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
+                | ComputeAdjacency(max_adjacency_distance_km=1.0)
+                | ComputeEncounters(
+                    max_km_for_encounter=0.5, min_minutes_for_encounter=120
+                )
+                | beam.Map(add_fake_vessel_id)
+                | MergeEncounters(
+                    min_hours_between_encounters=1
+                )  # 1 hour gap allows merging across midnight
+                | encounter.Encounter.ToDict()
+            )
+            assert_that(results, equal_to(self._get_merged_cross_day_expected()))
 
     def test_message_generation(self):
         items, opts = get_options(real_series_data)
@@ -609,4 +648,94 @@ class TestComputeEncounters(unittest.TestCase):
                 "end_lat": -1.4730263,
                 "end_lon": 179.999,
             }
+        ]
+
+    def _get_cross_day_expected(self):
+        return [
+            encounter.RawEncounter(
+                b"1",
+                b"2",
+                ts("2011-01-01T22:10:00Z"),
+                ts("2011-01-01T23:50:00Z"),
+                0.0,
+                0.0,  # vessel 1's mean longitude
+                0.011119492664455874,
+                0.0,
+                11,
+                11,
+                start_lat=0.0,
+                start_lon=0.0,
+                end_lat=0.0,
+                end_lon=0.0,  # vessel 1's end position
+            ),
+            encounter.RawEncounter(
+                b"1",
+                b"2",
+                ts("2011-01-02T00:00:00Z"),
+                ts("2011-01-02T01:00:00Z"),
+                0.0,
+                0.0,  # vessel 1's mean longitude
+                0.011119492664455874,
+                0.0,
+                7,
+                7,
+                start_lat=0.0,
+                start_lon=0.0,
+                end_lat=0.0,
+                end_lon=0.0,  # vessel 1's end position
+            ),
+            encounter.RawEncounter(
+                b"2",
+                b"1",
+                ts("2011-01-01T22:10:00Z"),
+                ts("2011-01-01T23:50:00Z"),
+                0.0,
+                0.0001,  # vessel 2's mean longitude
+                0.011119492664455874,
+                0.0,
+                11,
+                11,
+                start_lat=0.0,
+                start_lon=0.0001,
+                end_lat=0.0,
+                end_lon=0.0001,
+            ),
+            encounter.RawEncounter(
+                b"2",
+                b"1",
+                ts("2011-01-02T00:00:00Z"),
+                ts("2011-01-02T01:00:00Z"),
+                0.0,
+                0.0001,  # vessel 2's mean longitude
+                0.011119492664455874,
+                0.0,
+                7,
+                7,
+                start_lat=0.0,
+                start_lon=0.0001,
+                end_lat=0.0,
+                end_lon=0.0001,
+            ),
+        ]
+
+    def _get_merged_cross_day_expected(self):
+        return [
+            {
+                "vessel_1_id": b"1",
+                "vessel_2_id": b"2",
+                "start_time": 1293916200.0,  # 2011-01-01 22:10:00 UTC
+                "vessel_1_seg_ids": ["1"],
+                "vessel_2_seg_ids": ["2"],
+                "end_time": 1293926400.0,  # 2011-01-02 01:00:00 UTC
+                "mean_latitude": 0.0,
+                "mean_longitude": 0.00005,  # averaged from merging the two encounter segments
+                "median_distance_km": 0.011119492664455874,
+                "median_speed_knots": 0.0,
+                "vessel_1_point_count": 18,  # 11 from Jan 1 + 7 from Jan 2
+                "vessel_2_point_count": 18,  # 11 from Jan 1 + 7 from Jan 2
+                "start_lat": 0.0,
+                "start_lon": 0.0,
+                "end_lat": 0.0,
+                "end_lon": 0.0,  # vessel 1's end position
+            },
         ]
