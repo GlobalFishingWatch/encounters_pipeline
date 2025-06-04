@@ -79,6 +79,7 @@ def normalize(obj: Any) -> Any:
     else:
         return obj
 
+
 def equal_to(
     expected: List[Any], equals_fn: Callable[[Any, Any], bool] = _default_equals_fn
 ) -> Callable[[List[Any]], None]:

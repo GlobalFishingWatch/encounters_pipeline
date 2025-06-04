@@ -8,7 +8,7 @@ from collections import defaultdict
 from statistics import mean
 from statistics import median
 
-import datetime
+from datetime import datetime, timedelta
 import itertools as it
 import logging
 import math
@@ -41,11 +41,23 @@ class ComputeEncounters(PTransform):
         if len(adjacency_run) < 2:
             return
 
-        start_time = adjacency_run[0][0].timestamp
+        start_time = adjacency_run[0][0].timestamp  # is datetime object. Confusing variable name.
         end_time = adjacency_run[-1][0].timestamp
         encounter_duration = end_time - start_time
 
-        if encounter_duration < datetime.timedelta(minutes=self.min_minutes_for_encounter):
+        min_duration = timedelta(minutes=self.min_minutes_for_encounter)
+
+        start_of_day = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = start_of_day + timedelta(days=1)
+
+        # Discard short encounters (unless they occur near the start or end of the day).
+        if (
+            encounter_duration < min_duration
+            and not (  # Workaround to account for encounters that may span across day boundaries.
+                start_time >= (end_of_day - min_duration)  # near day end
+                or end_time <= (start_of_day + min_duration)  # near day start
+            )
+        ):
             return
 
         implied_speeds = [implied_speed_mps(rcd1a, rcd1b) for 
