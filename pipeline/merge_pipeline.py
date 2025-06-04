@@ -1,27 +1,22 @@
-from apache_beam import CoGroupByKey
-from apache_beam import Filter
-from apache_beam import Flatten
-from apache_beam import FlatMap
-from apache_beam import Map
-from apache_beam import Pipeline
-from apache_beam import io
-from apache_beam.options.pipeline_options import GoogleCloudOptions
-from apache_beam.options.pipeline_options import StandardOptions
+import datetime
+import logging
+
+import numpy as np
+import pytz
+import six
+from apache_beam import (CoGroupByKey, Filter, FlatMap, Flatten, Map, Pipeline,
+                         io)
+from apache_beam.options.pipeline_options import (GoogleCloudOptions,
+                                                  StandardOptions)
 from apache_beam.runners import PipelineState
 
 from pipeline.objects.encounter import Encounter, RawEncounter
 from pipeline.options.merge_options import MergeOptions
+from pipeline.schemas.output import build as build_schema
 from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.readers import ReadSources
 from pipeline.transforms.writers import WriteEncountersToBQ
-from pipeline.schemas.output import build as build_schema
-
-import datetime
-import logging
-import numpy as np
-import pytz
-import six
 
 
 def combine_ids(obj):
@@ -91,15 +86,12 @@ def create_queries(args, start_date, end_date):
         yield query
         start_window = end_window + datetime.timedelta(days=1)
 
-def filter_valid_coordinates(obj):
-    return -89.99 <= obj['mean_latitude'] <= 89.99
-
 def filter_by_distance(obj, min_distance_from_port_km):
     distance_from_shore_m = obj.pop('distance_from_shore_m')
     distance_from_port_m = obj.pop('distance_from_port_m')
     if distance_from_port_m < min_distance_from_port_km * 1000:
         return []
-    elif distance_from_shore_m <= 0:
+    elif distance_from_shore_m is None or distance_from_shore_m <= 0:
         return []
     return [obj]
 
@@ -135,7 +127,6 @@ def run(options):
 
     merged = (sources
         | Flatten()
-        | "Filter valid coordinates" >> Filter(filter_valid_coordinates)
         | "CombineSegVesselIds" >> Map(combine_ids)
         | FlatMap(filter_by_distance, min_distance_from_port_km=10)
         | RawEncounter.FromDict()
