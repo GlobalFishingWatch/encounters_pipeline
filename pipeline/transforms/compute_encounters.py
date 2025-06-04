@@ -45,7 +45,19 @@ class ComputeEncounters(PTransform):
         end_time = adjacency_run[-1][0].timestamp
         encounter_duration = end_time - start_time
 
-        if encounter_duration < datetime.timedelta(minutes=self.min_minutes_for_encounter):
+        # Skip duration filter for potential cross-day encounters
+        start_date_timestamp = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date_timestamp = end_time.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        starts_on_day_boundary = start_time - start_date_timestamp < datetime.timedelta(
+            minutes=self.min_minutes_for_encounter
+        )
+        ends_on_day_boundary = end_date_timestamp - end_time < datetime.timedelta(
+            minutes=self.min_minutes_for_encounter
+        )
+        potential_cross_day = starts_on_day_boundary or ends_on_day_boundary
+
+        if not potential_cross_day and encounter_duration < datetime.timedelta(minutes=self.min_minutes_for_encounter):
             return
 
         implied_speeds = [implied_speed_mps(rcd1a, rcd1b) for 
