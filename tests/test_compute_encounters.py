@@ -27,6 +27,7 @@ from .series_data import (
     real_series_data,
     simple_series_data,
     cross_day_series_data,
+    too_short_series_data,
 )
 
 from .test_resample import ResampledRecord
@@ -152,13 +153,15 @@ EXPECTED_CROSS_DAY = [
     ),
 ]
 
+
 @pytest.mark.parametrize(
     "input_data,expected_data",
     [
-        pytest.param(cross_day_series_data, EXPECTED_CROSS_DAY, id="22pm-02am")
+        pytest.param(cross_day_series_data, EXPECTED_CROSS_DAY, id="22pm-02am"),
+        pytest.param(too_short_series_data, [], id="too-short")
     ],
 )
-def test_near_midnight_encounters(input_data, expected_data):
+def test_encounters(input_data, expected_data):
     items, opts = get_options(input_data)
     with _TestPipeline(options=opts) as p:
         results = (
@@ -172,7 +175,8 @@ def test_near_midnight_encounters(input_data, expected_data):
                 max_km_for_encounter=0.5, min_minutes_for_encounter=120
             )
         )
-        assert_that(results, equal_to_rich(expected_data))
+        assert_that(results, equal_to(expected_data))
+
 
 @pytest.mark.filterwarnings("ignore:Using fallback coder:UserWarning")
 @pytest.mark.filterwarnings(

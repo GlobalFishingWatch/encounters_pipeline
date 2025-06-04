@@ -106,6 +106,37 @@ cross_day_path_2 = [
 
 cross_day_series_data = cross_day_path_1 + cross_day_path_2
 
+# Too short encounters during the day - less than 2 hours.
+too_short_path_1 = [
+    Record("2011-01-01 11:50:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 11:00:00 UTC", 0.0, 0.0, id='1'),
+    # Encounter start
+    Record("2011-01-01 12:10:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 12:20:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 12:30:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 12:40:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 12:50:00 UTC", 0.0, 0.0, id='1'),
+    # Encounter end
+    Record("2011-01-01 13:00:00 UTC", 0.0, 0.0, id='1'),
+    Record("2011-01-01 13:10:00 UTC", 0.0, 0.0, id='1'),
+]
+
+too_short_path_2 = [
+    Record("2011-01-01 11:50:00 UTC", 0.0, 0.1, id='2'),     # Far away
+    Record("2011-01-01 11:00:00 UTC", 0.0, 0.1, id='2'),     # Far away
+    # Encounter start
+    Record("2011-01-01 12:10:00 UTC", 0.0, 0.0001, id='2'),  # ~11m away
+    Record("2011-01-01 12:20:00 UTC", 0.0, 0.0001, id='2'),
+    Record("2011-01-01 12:30:00 UTC", 0.0, 0.0001, id='2'),
+    Record("2011-01-01 12:40:00 UTC", 0.0, 0.0001, id='2'),
+    Record("2011-01-01 12:50:00 UTC", 0.0, 0.0001, id='2'),
+    # Encounter end
+    Record("2011-01-01 13:00:00 UTC", 0.0, 0.1, id='2'),     # Far away
+    Record("2011-01-01 13:10:00 UTC", 0.0, 0.1, id='2'),     # Far away
+]
+
+too_short_series_data = too_short_path_1 + too_short_path_2
+
 
 dl_path_1 = [
     Record("2011-01-01 15:40:00 UTC", -1.5032387, 179.999, id='1'),
