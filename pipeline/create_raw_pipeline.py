@@ -63,11 +63,10 @@ def create_queries(args):
             id_prefix += ':'
         else:
             id_prefix = ''
-        table = table.replace(':', '.')
         start_window = start_date
         while start_window <= end_date:
             end_window = min(start_window + datetime.timedelta(days=999), end_date)
-            query = template.format(id_prefix=id_prefix, position_table=table, 
+            query = template.format(id_prefix=id_prefix, position_table=table,
                                     start=start_window, end=end_window,
                                     condition=condition
                                     )
