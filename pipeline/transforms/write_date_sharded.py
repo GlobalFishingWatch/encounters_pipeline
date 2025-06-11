@@ -9,10 +9,8 @@ datetimeFromTimestamp = lambda ts: dt.datetime.fromtimestamp(ts, tz=pytz.UTC)
 
 class WriteDateSharded(beam.PTransform):
     def __init__(self, cloud_options, opts, schema, key="end_time"):
-        self.project = cloud_options.project
         self.source = opts.source_tables
-        self.sink = opts.raw_table.split(':')[1]
-        print(self.sink)
+        self.sink = opts.raw_table
         self.max_encounter_dist_km = opts.max_encounter_dist_km
         self.min_encounter_time_minutes = opts.min_encounter_time_minutes
         self.start_date = opts.start_date
@@ -40,13 +38,12 @@ Created by the encounters_pipeline: {self.ver}.
 
     def compute_table_for_event(self, msg):
         dt = datetimeFromTimestamp(msg[self.key]).date()
-        return f"{self.project}:{self.sink}{dt:%Y%m%d}"
+        return f"{self.sink}{dt:%Y%m%d}"
 
     def expand(self, pcoll):
         return pcoll | "WriteRawEncounters" >> beam.io.gcp.bigquery.WriteToBigQuery(
             self.compute_table_for_event,
             schema=self.schema,
-            project=self.project,
             write_disposition=self.write_disposition,
             additional_bq_parameters=self.get_description(),
         )
