@@ -4,7 +4,6 @@ from setuptools import setup
 
 setup(
     name='encounters',
-    version='4.1.4',
+    version='4.2.0',
     packages=find_packages(exclude=['test*.*', 'tests'])
 )
-
