@@ -18,19 +18,23 @@ from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.resample import Resample
 from pipeline.utils.test import approx_equal_to as equal_to
+from pipeline.utils.beam import equal_to as equal_to_rich
 
-from .series_data import (dateline_series_data, fastsep_series_data,
-                          multi_series_data, real_series_data,
-                          simple_series_data)
+from .series_data import (
+    dateline_series_data,
+    fastsep_series_data,
+    multi_series_data,
+    real_series_data,
+    simple_series_data,
+    cross_day_series_data,
+    too_short_series_data,
+)
+
 from .test_resample import ResampledRecord
 
 
 def ensure_bytes_id(obj):
     return obj._replace(id=six.ensure_binary(obj.id))
-
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
 
 
 def add_fake_vessel_id(obj):
@@ -82,6 +86,96 @@ def get_options(items:list):
     return tuple_data, CreateOptions(args)
 
 
+EXPECTED_CROSS_DAY = [
+    encounter.RawEncounter(
+        b"1",
+        b"2",
+        ts("2011-01-01T22:10:00Z"),
+        ts("2011-01-01T23:50:00Z"),
+        0.0,
+        0.0,  # vessel 1's mean longitude
+        0.011119492664455874,
+        0.0,
+        11,
+        11,
+        start_lat=0.0,
+        start_lon=0.0,
+        end_lat=0.0,
+        end_lon=0.0,  # vessel 1's end position
+    ),
+    encounter.RawEncounter(
+        b"1",
+        b"2",
+        ts("2011-01-02T00:00:00Z"),
+        ts("2011-01-02T01:00:00Z"),
+        0.0,
+        0.0,  # vessel 1's mean longitude
+        0.011119492664455874,
+        0.0,
+        7,
+        7,
+        start_lat=0.0,
+        start_lon=0.0,
+        end_lat=0.0,
+        end_lon=0.0,  # vessel 1's end position
+    ),
+    encounter.RawEncounter(
+        b"2",
+        b"1",
+        ts("2011-01-01T22:10:00Z"),
+        ts("2011-01-01T23:50:00Z"),
+        0.0,
+        0.0001,  # vessel 2's mean longitude
+        0.011119492664455874,
+        0.0,
+        11,
+        11,
+        start_lat=0.0,
+        start_lon=0.0001,
+        end_lat=0.0,
+        end_lon=0.0001,
+    ),
+    encounter.RawEncounter(
+        b"2",
+        b"1",
+        ts("2011-01-02T00:00:00Z"),
+        ts("2011-01-02T01:00:00Z"),
+        0.0,
+        0.0001,  # vessel 2's mean longitude
+        0.011119492664455874,
+        0.0,
+        7,
+        7,
+        start_lat=0.0,
+        start_lon=0.0001,
+        end_lat=0.0,
+        end_lon=0.0001,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "input_data,expected_data",
+    [
+        pytest.param(cross_day_series_data, EXPECTED_CROSS_DAY, id="22pm-02am"),
+        pytest.param(too_short_series_data, [], id="too-short")
+    ],
+)
+def test_encounters(input_data, expected_data):
+    items, opts = get_options(input_data)
+    with _TestPipeline(options=opts) as p:
+        results = (
+            p
+            | beam.Create(items)
+            | beam.Map(lambda x: record.Record(*x))
+            | "Ensure ID is bytes" >> Map(ensure_bytes_id)
+            | Resample(increment_s=60 * 10, max_gap_s=60 * 70, extrapolate=False)
+            | ComputeAdjacency(max_adjacency_distance_km=1.0)
+            | ComputeEncounters(
+                max_km_for_encounter=0.5, min_minutes_for_encounter=120
+            )
+        )
+        assert_that(results, equal_to(expected_data))
 
 
 @pytest.mark.filterwarnings("ignore:Using fallback coder:UserWarning")
