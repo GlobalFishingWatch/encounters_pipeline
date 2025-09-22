@@ -41,7 +41,7 @@ source_table=${source_table:-world-fishing-827.pipe_ais_v3_internal.messages_pos
 adjacency_table=${adjacency_table:-world-fishing-827.scratch_christian_homberg_ttl120d._encounters_dev_adjacency_$current_ts}
 start_date=${start_date:-'2012-01-01'}
 end_date=${end_date:-'2012-01-02'}
-ssvid_filter=${ssvid_filter:-""}
+ssvid_filter=${ssvid_filter:-"ssvid"}
 runner=${runner:-"DirectRunner"}
 
 # print all parameters
@@ -51,7 +51,7 @@ echo "start_date: $start_date"
 echo "end_date: $end_date"
 echo "ssvid_filter: $ssvid_filter"
 
-python main.py create_raw_encounters \
+docker compose run create_raw_encounters \
     --source_table $source_table \
     --adjacency_table $adjacency_table \
     --start_date "$start_date" \
