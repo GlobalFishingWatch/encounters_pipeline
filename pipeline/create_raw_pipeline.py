@@ -7,17 +7,23 @@ from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.runners import PipelineState
 from apache_beam.transforms.window import TimestampedValue
 
+from google.cloud import bigquery
+
 from pipeline.objects.encounter import RawEncounter
 from pipeline.objects.record import Record
 from pipeline.options.create_options import CreateOptions
-from pipeline.schemas.output import build_raw_encounter
+from pipeline.schemas.adjacency_encounter import adjacency_encounter
 from pipeline.schemas.utils import schema_to_obj
 from pipeline.transforms.add_id import AddRawEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.resample import Resample
-from pipeline.transforms.write_date_sharded import WriteDateSharded
 from pipeline.transforms.readers import ReadSources
+from pipeline.transforms.sink import AdjacencyEncountersSink
+
+from pipeline.utils.bqtools import BigQueryHelper, DatePartitionedTable
+from pipeline.utils.ver import get_pipe_ver
+
 
 import datetime
 import logging
@@ -25,8 +31,6 @@ import pytz
 
 
 
-RESAMPLE_INCREMENT_MINUTES = 10.0
-MAX_GAP_HOURS = 1.0
 PRECURSOR_DAYS = 1
 
 
@@ -70,6 +74,7 @@ def create_queries(args):
                                     start=start_window, end=end_window,
                                     condition=condition
                                     )
+            logging.info(f"Generated query for {table}: {query}")
             yield query
             start_window = end_window + datetime.timedelta(days=1)
 
@@ -94,12 +99,61 @@ def check_schema(x, schema):
     return x
 
 
+def prepare_output_tables(pipe_options, cloud_options, start_date, end_date):
+    output_table = DatePartitionedTable(
+        table_id=pipe_options.adjacency_table,
+        description=f"""
+Created by the encounters_pipeline: {get_pipe_ver()}.
+* Creates adjacency positions on a {pipe_options.resample_increment_minutes} minute time grid based on which encounters are generated.
+* https://github.com/GlobalFishingWatch/encounters_pipeline
+* Sources: {pipe_options.source_tables}
+* Maximum distance for vessels to be elegible (km): {pipe_options.max_encounter_dist_km}
+        """,  # noqa: E501
+        schema=adjacency_encounter["fields"],
+        partitioning_field="timestamp",
+    )
+
+    bq_helper = BigQueryHelper(
+        bq_client=bigquery.Client(
+            project=cloud_options.project,
+        ),
+        labels=dict([entry.split("=") for entry in cloud_options.labels]),
+    )
+
+    bq_helper.ensure_table_exists(output_table)
+    bq_helper.update_table(output_table)
+
+
+def adjacency_to_msg(adjacency_record):
+    adjacency = dict()
+    adjacency["timestamp"] = adjacency_record.timestamp
+    adjacency["seg_id"] = adjacency_record.id
+    adjacency["lat"] = adjacency_record.lat
+    adjacency["lon"] = adjacency_record.lon
+    # adjacency_segments is an array of two attributes: adjacency_record.closest_neighbors and adjacency_record.closest_distances
+    # both are arrays that need to be zipped
+    adjacency["adjacent_segments"] = [{
+        'seg_id': neighbor.id,
+        'lat': neighbor.lat,
+        'lon': neighbor.lon,
+        'distance': distance
+    } for neighbor, distance in zip(adjacency_record.closest_neighbors, adjacency_record.closest_distances)]
+    return adjacency
+
 def run(options):
 
     p = Pipeline(options=options)
 
     create_options = options.view_as(CreateOptions)
     cloud_options = options.view_as(GoogleCloudOptions)
+
+    cloud_options.labels = [
+        "pipeline=encounters",
+        "job=create_raw_pipeline",
+        "source=bigquery",
+        "type=raw",
+        "creator=christianhomberg"
+    ]
 
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
@@ -112,22 +166,17 @@ def run(options):
     ]
 
 
-    adjacencies = (sources
+    (sources
         | Flatten()
         | Record.FromDict()
-        | Resample(increment_s = 60 * RESAMPLE_INCREMENT_MINUTES,
-                   max_gap_s = 60 * 60 * MAX_GAP_HOURS)
+        | Resample(increment_s = 60 * create_options.resample_increment_minutes,
+                   max_gap_s = 60 * 60 * create_options.max_gap_hours)
         | ComputeAdjacency(max_adjacency_distance_km=create_options.max_encounter_dist_km)
-        | ComputeEncounters(max_km_for_encounter=create_options.max_encounter_dist_km,
-                            min_minutes_for_encounter=create_options.min_encounter_time_minutes)
-        | Filter(lambda x: start_date.date() <= x.end_time.date() <= end_date.date())
-        | RawEncounter.ToDict()
-        | AddRawEncounterId()
-        | Map(lambda x: TimestampedValue(x, x['end_time'])) 
-        | Map(check_schema, schema=schema_to_obj(build_raw_encounter()))
-        | WriteDateSharded(cloud_options, create_options, build_raw_encounter())
+        | Map(adjacency_to_msg)
+        | AdjacencyEncountersSink(create_options.adjacency_table)
     )
-
+    
+    prepare_output_tables(create_options, cloud_options, start_date, end_date)
     result = p.run()
 
     success_states = set([PipelineState.DONE])

@@ -14,17 +14,19 @@ class CreateOptions(PipelineOptions):
                             help='Table to pull messages from. May be prefixed by "{ID}::" to prefix '
                                  'the seg_id with {ID}. This is useful for applying to multiple sources '
                                  '(e.g., AIS/VMS) while ensuring the seg_ids stay distinct.')
-        required.add_argument('--raw_table', required=True,
-                            help='Table to write raw (unmerged) encounters to')
+        required.add_argument('--adjacency_table', required=True,
+                            help='Table to write adjacency positions to')
         required.add_argument('--start_date', required=True,
                             help="First date to look for entry/exit events.")
         required.add_argument('--end_date', required=True,
                             help="Last date (inclusive) to look for entry/exit events.")
         required.add_argument('--max_encounter_dist_km', required=True, type=float,
                             help="Maximum distance for vessels to be elegible for an encounters")
-        required.add_argument('--min_encounter_time_minutes', required=True, type=float,
-                            help="Minimum minutes of vessel adjacency before we have an encounter")
 
+        optional.add_argument('--resample_increment_minutes', default=10.0, type=float,
+                            help="Number of minutes to use for the resampling time grid.")
+        optional.add_argument('--max_gap_hours', default=1.0, type=float,
+                            help="Maximum gap (in hours) between consecutive points to consider them part of the same encounter.")
         optional.add_argument('--raw_sink_write_disposition', default='WRITE_APPEND',
                             help='How to merge the output of this process with whatever records are already there'
                                  ' in the sink tables. Might be WRITE_TRUNCATE to remove all existing data and write'

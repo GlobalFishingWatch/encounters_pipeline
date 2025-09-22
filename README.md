@@ -13,6 +13,7 @@ pipeline. No other dependency is required.
 
 ## Setup
 
+### Localrunner
 The pipeline reads it's input from BigQuery, so you need to first authenticate
 with your google cloud account inside the docker images. To do that, you need
 to run this command and follow the instructions:
@@ -21,6 +22,29 @@ to run this command and follow the instructions:
 ```
 docker compose run --entrypoint gcloud pipe_enocunters auth application-default login
 ```
+
+### Dataflowrunner
+By default, the `docker compose run` command above will use the "local runner" which means the pipeline runs on the local machine. Instead, you can use the "Dataflow runner" to run the pipeline on Google Cloud Dataflow. To do this, you need to set the `--runner` flag to `DataflowRunner` and provide the necessary parameters such as `--project`, `--region`, `--temp_location`, and `--staging_location`.
+
+An example command could look like this:
+```
+docker compose run create_raw_encounters \
+        --source_table world-fishing-827.pipe_ais_v3_internal.messages_positions \
+        --adjacency_table world-fishing-827.scratch_christian_homberg_ttl120d._encounters_dev_202509151632_adjacency \
+        --start_date '2012-01-01' \
+        --end_date '2012-05-31' \
+        --max_encounter_dist_km 0.5 \
+        --temp_location=gs://scratch_chris/dataflow_temp \
+        --staging_location=gs://scratch_chris/dataflow_staging \
+        --project world-fishing-827 \
+        --runner DataflowRunner \
+        --region us-central1 \
+        --max_num_workers=100 \
+        --disk_size_gb=50 \
+        --setup_file=./setup.py \
+        --requirements_file=requirements-worker.txt
+```
+
 
 ## Overview
 

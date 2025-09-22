@@ -1,0 +1,43 @@
+CREATE TEMP FUNCTION ENCOUNTER_MAX_GAP_MINUTES() AS ({{ max_gap_minutes }});
+
+-- adjacencies is an array of STRUCT which has seg_id, lat, lon, distance
+-- need to unnest that and create a row for each adjacent segment
+WITH unnested_adjacencies AS (
+  SELECT
+    a.* EXCEPT(adjacent_segments),
+    adjacencies.seg_id AS encounter_seg_id,
+    adjacencies.lat AS encounter_lat,
+    adjacencies.lon AS encounter_lon,
+    adjacencies.distance AS encounter_distance
+  FROM `{{ adjacency_table }}` a
+  LEFT JOIN UNNEST(adjacent_segments) adjacencies
+),
+
+-- we can *probably* remove rows that don't have any adjacent segments
+adjacency_gaps AS (
+  SELECT *, TIMESTAMP_DIFF(timestamp, LAG(timestamp) OVER(PARTITION BY seg_id, encounter_seg_id ORDER BY timestamp), MINUTE) adjacency_gap_duration
+  FROM unnested_adjacencies
+  WHERE encounter_seg_id IS NOT NULL
+  AND seg_id < encounter_seg_id
+),
+
+adjacency_ids AS (
+  SELECT
+  -- start a new adjacency group whenever 1. the gap duration IS NULL (i.e. new seg_id <-> encounter_seg_id combination); or 2. the duration exceeds the gap threshold
+    CASE
+      WHEN adjacency_gap_duration IS NULL OR adjacency_gap_duration >= ENCOUNTER_MAX_GAP_MINUTES() THEN 1
+      ELSE 0
+    END AS adjacency_group_indicator,
+    *
+  FROM adjacency_gaps
+),
+adjacency_groups AS (
+  SELECT SUM(adjacency_group_indicator) OVER(PARTITION BY seg_id, encounter_seg_id ORDER BY timestamp) AS adjacency_group_index, *
+  FROM adjacency_ids
+)
+
+SELECT MIN(timestamp) start_time, MAX(timestamp) end_time, MIN(lat) min_lat, MIN(lon) min_lon, MAX(lat) max_lat, MAX(lon) max_lon, seg_id, encounter_seg_id, adjacency_group_index
+FROM adjacency_groups
+GROUP BY seg_id, encounter_seg_id, adjacency_group_index
+ORDER BY seg_id, encounter_seg_id, start_time
+
