@@ -2,16 +2,22 @@ CREATE TEMP FUNCTION ENCOUNTER_MAX_GAP_MINUTES() AS ({{ max_gap_minutes }});
 
 -- adjacencies is an array of STRUCT which has seg_id, lat, lon, distance
 -- need to unnest that and create a row for each adjacent segment
+-- the first part of the unnested_adjacencies CTE is the first segment's track with timestamps
+-- the second part gets the "encounter_" prefix and is the adjacent segment's track and distance from the first segment
+-- at this point we have a bi-directional CTE, i.e. each encounter-pair exists twice, once as (A,B) and once as (B,A)
+-- we will filter these down later to get unique encounter pairs
+-- we need to remove invalid latitudes because the average position cannot be calculated on invalid latitudes
 WITH unnested_adjacencies AS (
   SELECT
-    a.* EXCEPT(adjacent_segments),
+    segments.* EXCEPT(adjacent_segments),
     adjacencies.seg_id AS encounter_seg_id,
     adjacencies.lat AS encounter_lat,
     adjacencies.lon AS encounter_lon,
     adjacencies.distance AS encounter_distance
-  FROM `{{ adjacency_table }}` a
+  FROM `{{ adjacency_table }}` segments
   LEFT JOIN UNNEST(adjacent_segments) adjacencies
-  WHERE a.lat BETWEEN -90 AND 90
+  WHERE DATE(timestamp) BETWEEN '{{ start_date }}' AND '{{ end_date }}'
+  AND segments.lat BETWEEN -90 AND 90
   AND (
     adjacencies.lat BETWEEN -90 AND 90
     OR
@@ -19,6 +25,8 @@ WITH unnested_adjacencies AS (
   )
 ),
 
+-- for each segment we need to get unique timestamps so we can later check whether an encounter-pair
+-- occurred after the first segment had positions which would break up the encounter sequence
 segment_timestamps AS (
   SELECT DISTINCT seg_id, timestamp
   FROM unnested_adjacencies
@@ -29,6 +37,7 @@ segment_previous_timestamps AS (
   FROM segment_timestamps
 ),
 
+-- join back to get the previous timestamp for each segment at each timestamp
 next_seg_timestamp AS (
   SELECT unnested_adjacencies.*, segment_previous_timestamps.segment_previous_timestamp
   FROM unnested_adjacencies
@@ -48,7 +57,11 @@ adjacency_gaps AS (
 
 adjacency_ids AS (
   SELECT
-  -- start a new adjacency group whenever 1. the gap duration IS NULL (i.e. new seg_id <-> encounter_seg_id combination); or 2. the duration exceeds the gap threshold
+  -- start a new adjacency group whenever
+  -- 1. the gap duration IS NULL (i.e. new seg_id <-> encounter_seg_id combination);
+  -- 2. the encounter crosses the date boundary (current bugged behaviour) --TODO: the duration exceeds the gap threshold;
+  -- 3. the previous timestamp for the encounter segment is not the same as the previous timestamp for the segment
+  --    (i.e. the segment had positions in between the current and previous encounter position)
     CASE
       WHEN adjacency_gap_duration IS NULL
         OR DATE(encounter_previous_timestamp) != DATE(timestamp)
@@ -65,17 +78,19 @@ adjacency_groups AS (
   FROM adjacency_ids
 ),
 
+-- TODO: all of those aggregations need to be adjusted and implied speed needs to be added
 encounters AS (
   SELECT MIN(timestamp) start_time, MAX(timestamp) end_time, seg_id, encounter_seg_id, adjacency_group_index, ST_CENTROID_AGG(ST_geogpoint(lon,lat)) avg_lat_lon
   FROM adjacency_groups
   GROUP BY seg_id, encounter_seg_id, adjacency_group_index
 ),
 
+-- until here, what we've done is equivalent to compute_encounters and writing raw_encounters
+-- the rest below is equivalent to merge_encounters
 gc AS (
   SELECT format("lon:%+07.2f_lat:%+07.2f", ST_X(avg_lat_lon), ST_Y(avg_lat_lon)) as gridcode, * FROM encounters
 ),
 
--- this is equivalent to merge_encounters
 filtered_encounters AS (
   SELECT * REPLACE(
     LEAST(seg_id, encounter_seg_id) AS seg_id,
@@ -98,6 +113,7 @@ intervals AS (
     ) AS max_end_so_far
   FROM filtered_encounters
 ),
+
 interval_groups AS (
   SELECT 
     *,
@@ -110,8 +126,6 @@ encounter_groups AS (
   FROM interval_groups
 ),
 
-
---TODO: this is not how we aggregate final encounters
 merged_encounters AS (
   SELECT 
     MIN(start_time) start_time,
