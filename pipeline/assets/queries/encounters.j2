@@ -11,6 +11,8 @@ WITH unnested_adjacencies AS (
     adjacencies.distance AS encounter_distance
   FROM `{{ adjacency_table }}` a
   LEFT JOIN UNNEST(adjacent_segments) adjacencies
+  WHERE a.lat BETWEEN -90 AND 90
+  AND adjacencies.lat BETWEEN -90 AND 90
 ),
 
 segment_timestamps AS (
@@ -60,13 +62,13 @@ adjacency_groups AS (
 ),
 
 encounters AS (
-  SELECT MIN(timestamp) start_time, MAX(timestamp) end_time, seg_id, encounter_seg_id, adjacency_group_index, AVG(lat) mean_latitude, AVG(lon) mean_longitude
+  SELECT MIN(timestamp) start_time, MAX(timestamp) end_time, seg_id, encounter_seg_id, adjacency_group_index, ST_CENTROID_AGG(ST_geogpoint(lon,lat)) avg_lat_lon
   FROM adjacency_groups
   GROUP BY seg_id, encounter_seg_id, adjacency_group_index
 ),
 
 gc AS (
-  SELECT format("lon:%+07.2f_lat:%+07.2f", mean_longitude, mean_latitude) as gridcode, * FROM encounters
+  SELECT format("lon:%+07.2f_lat:%+07.2f", ST_X(avg_lat_lon), ST_Y(avg_lat_lon)) as gridcode, * FROM encounters
 ),
 
 -- this is equivalent to merge_encounters
@@ -113,8 +115,7 @@ merged_encounters AS (
     seg_id,
     encounter_seg_id,
     merged_encounter_group,
-    AVG(mean_latitude) mean_latitude,
-    AVG(mean_longitude) mean_longitude,
+    ST_CENTROID_AGG(avg_lat_lon) avg_lat_lon,
     AVG(distance_from_port_m) avg_distance_from_port_m,
   FROM encounter_groups
   GROUP BY seg_id, encounter_seg_id, merged_encounter_group
