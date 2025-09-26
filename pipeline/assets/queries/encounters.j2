@@ -12,7 +12,11 @@ WITH unnested_adjacencies AS (
   FROM `{{ adjacency_table }}` a
   LEFT JOIN UNNEST(adjacent_segments) adjacencies
   WHERE a.lat BETWEEN -90 AND 90
-  AND adjacencies.lat BETWEEN -90 AND 90
+  AND (
+    adjacencies.lat BETWEEN -90 AND 90
+    OR
+    adjacencies IS NULL
+  )
 ),
 
 segment_timestamps AS (
