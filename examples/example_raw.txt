@@ -1,0 +1,17 @@
+docker-compose run create_raw_encounters \
+    --source_table world-fishing-827.pipe_ais_v3_internal.messages_positions \
+    --start_date 2018-01-01 \
+    --end_date 2018-01-02 \
+    --max_encounter_dist_km 0.5 \
+    --min_encounter_time_minutes 60 \
+    --raw_table world-fishing-827.scratch_tomas_ttl30d.raw_encounters \
+    --project world-fishing-827 \
+    --temp_location gs://pipe-temp-us-east-ttl7/dataflow_temp \
+    --job_name tom-test-encounters-raw-partitioned \
+    --max_num_workers 200 \
+    --labels environment=test \
+    --setup_file ./setup.py \
+    --requirements_file requirements-worker.txt \
+    --runner dataflow \
+    --disk_size_gb 100 \
+    --region us-central1

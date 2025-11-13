@@ -12,7 +12,7 @@ list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
 
 DELETE_QUERY = """
 DELETE FROM `{table}`
-WHERE DATE(start_time) >= {start_date}
+WHERE DATE(start_time) = '{start_date}'
 """
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,7 @@ class WriteEncountersToBQ(beam.PTransform):
         self.bqclient = bigquery.Client(project=cloud_opts.project)
         self.table_id = table_id
         self.schema = schema
-        if cloud_opts.labels is None:
-            self.labels = {}
-
-        self.labels = list_to_dict(cloud_opts.labels or "")
+        self.labels = list_to_dict(cloud_opts.labels)
         self.description = description
         self.kwargs = kwargs
 

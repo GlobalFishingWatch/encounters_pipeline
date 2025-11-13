@@ -33,13 +33,13 @@ PRECURSOR_DAYS = 1
 
 def get_description(options: CreateOptions):
     return f"""\
-    Created by the encounters_pipeline: {get_pipe_ver()}.
-    * Creates raw encounters, reads the data from source and computes encounters over windows between start_date and end_date.
-    * https://github.com/GlobalFishingWatch/encounters_pipeline
-    * Sources: {options.source_tables}
-    * Maximum distance for vessels to be elegible (km): {options.max_encounter_dist_km}
-    * Minimum minutes of vessel adjacency before we have an encounter: {options.min_encounter_time_minutes}
-    """
+Created by the encounters_pipeline: {get_pipe_ver()}.
+* Creates raw encounters, reads the data from source and computes encounters over windows between start_date and end_date.
+* https://github.com/GlobalFishingWatch/encounters_pipeline
+* Sources: {options.source_tables}
+* Maximum distance for vessels to be elegible (km): {options.max_encounter_dist_km}
+* Minimum minutes of vessel adjacency before we have an encounter: {options.min_encounter_time_minutes}
+"""
 
 
 def create_queries(args):

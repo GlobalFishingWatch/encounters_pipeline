@@ -1,18 +1,18 @@
 docker-compose run merge_encounters \
-    --raw_table world-fishing-827.pipe_ais_v3_internal.raw_encounters_ \
+    --raw_table world-fishing-827.scratch_tomas_ttl30d.raw_encounters \
     --vessel_id_table world-fishing-827.pipe_ais_v3_published.segment_info \
-    --sink_table world-fishing-827.scratch_tomas_ttl30d.encounters_test \
-    --spatial_measures_table world-fishing-827.pipe_static.spatial_measures_20200311 \
+    --sink_table world-fishing-827.scratch_tomas_ttl30d.merge_encounters \
+    --spatial_measures_table world-fishing-827.pipe_static.spatial_measures_clustered_20230307 \
     --min_encounter_time_minutes 120 \
     --start_date 2018-01-01 \
-    --end_date 2018-01-31 \
+    --end_date 2018-01-02 \
     --project world-fishing-827 \
     --labels environment=test \
-    --temp_location gs://world-fishing-827-dev-ttl30d/scratch/encounters \
-    --job_name encounters-merge-test \
+    --temp_location gs://pipe-temp-us-east-ttl7/dataflow_temp \
+    --job_name tom-test-encounters-merge \
     --max_num_workers 50 \
     --setup_file ./setup.py \
-    --requirements_file requirements.txt \
-    --runner direct \
+    --requirements_file requirements-worker.txt \
+    --runner dataflow \
     --disk_size_gb 100 \
     --region us-central1
