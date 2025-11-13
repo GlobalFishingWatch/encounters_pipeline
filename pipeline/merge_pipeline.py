@@ -13,7 +13,7 @@ from apache_beam.runners import PipelineState
 
 from pipeline.objects.encounter import Encounter, RawEncounter
 from pipeline.options.merge_options import MergeOptions
-from pipeline.schemas.output import build as build_schema
+from pipeline.schemas.output import build as merge_schema
 from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.readers import ReadSources
@@ -156,6 +156,7 @@ def run(options):
 
     writer = WriteEncountersToBQ(
         table_id=merge_options.sink_table,
+        schema=merge_schema(),
         cloud_opts=cloud_options,
         description=get_description(merge_options),
         write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE

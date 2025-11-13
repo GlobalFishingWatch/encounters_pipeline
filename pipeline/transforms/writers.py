@@ -1,6 +1,8 @@
 from google.cloud import bigquery
-from pipeline.schemas.output import build as output_schema
+
 import apache_beam as beam
+from apache_beam.io.gcp.internal.clients.bigquery import TableSchema
+
 import logging
 
 from typing import Any
@@ -9,17 +11,17 @@ list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
 
 
 class WriteEncountersToBQ(beam.PTransform):
-
     def __init__(
         self,
         table_id: str,
+        schema: TableSchema,
         cloud_opts,
         description: str = None,
         **kwargs: Any,
     ):
         self.bqclient = bigquery.Client(project=cloud_opts.project)
         self.table_id = table_id
-        self.schema = output_schema()
+        self.schema = schema
         if cloud_opts.labels is None:
             self.labels = {}
 
@@ -37,7 +39,7 @@ class WriteEncountersToBQ(beam.PTransform):
         logging.info(f"Update table metadata to output table <{self.table_id}>")
 
     def expand(self, pcoll):
-        return pcoll | "WriteEncounters" >> beam.io.WriteToBigQuery(
+        return pcoll | beam.io.WriteToBigQuery(
             self.table_id,
             schema=self.schema,
             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
