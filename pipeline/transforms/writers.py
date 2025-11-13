@@ -10,6 +10,14 @@ from typing import Any
 list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
 
 
+DELETE_QUERY = """
+DELETE FROM `{table}`
+WHERE DATE(start_time) >= {start_date}
+"""
+
+logger = logging.getLogger(__name__)
+
+
 class WriteEncountersToBQ(beam.PTransform):
     def __init__(
         self,
@@ -29,6 +37,10 @@ class WriteEncountersToBQ(beam.PTransform):
         self.description = description
         self.kwargs = kwargs
 
+    def delete_rows(self, start_date: str) -> None:
+        logger.info("Deleting records in {} from date {}".format(self.table_id, start_date))
+        self.bqclient.query(DELETE_QUERY.format(table=self.table_id, start_date=start_date))
+
     def update_table_metadata(self):
         table = self.bqclient.get_table(self.table_id)  # API request
         if self.description is not None:
@@ -36,7 +48,7 @@ class WriteEncountersToBQ(beam.PTransform):
 
         table.labels = self.labels
         self.bqclient.update_table(table, ["description", "labels"])  # API request
-        logging.info(f"Update table metadata to output table <{self.table_id}>")
+        logger.info(f"Update table metadata to output table <{self.table_id}>")
 
     def expand(self, pcoll):
         return pcoll | beam.io.WriteToBigQuery(

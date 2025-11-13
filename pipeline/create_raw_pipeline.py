@@ -125,6 +125,17 @@ def run(options):
         )) for (i, query) in enumerate(create_queries(create_options))
     ]
 
+    writer = WriteEncountersToBQ(
+        table_id=create_options.raw_table,
+        schema=schema,
+        cloud_opts=cloud_options,
+        description=get_description(create_options),
+        write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+    )
+
+    # Ensure we delete any existing rows from the date to be processed.
+    # Needed to maintain consistency we re-processing dates.
+    writer.delete_rows(start_date=create_options.start_date)
 
     adjacencies = (sources
         | Flatten()
@@ -139,13 +150,7 @@ def run(options):
         | AddRawEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
         | Map(check_schema, schema=schema_to_obj(schema))
-        | WriteEncountersToBQ(
-            table_id=create_options.raw_table,
-            schema=schema,
-            cloud_opts=cloud_options,
-            description=get_description(create_options),
-            write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
-        )
+        | writer
     )
 
     result = p.run()
