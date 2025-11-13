@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pytz
 import six
+import apache_beam as beam
 from apache_beam import (CoGroupByKey, Filter, FlatMap, Flatten, Map, Pipeline,
                          io)
 from apache_beam.options.pipeline_options import (GoogleCloudOptions,
@@ -17,6 +18,21 @@ from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.readers import ReadSources
 from pipeline.transforms.writers import WriteEncountersToBQ
+from pipeline.utils.ver import get_pipe_ver
+
+
+def get_description(options: MergeOptions):
+    return f"""\
+    Created by the encounters_pipeline: {get_pipe_ver()}
+    * Merges the encounters that are close in time into one long encounter.
+    * https://github.com/GlobalFishingWatch/encounters_pipeline
+    * Source raw encounters: {options.sink_table}
+    * Source vessel id: {options.vessel_id_tables}
+    * Source Spatial Measure: {options.spatial_measures_table}
+    * Min hours before encounter: {options.min_hours_between_encounters}
+    * Skip bad segments table? {"Yes" if options.bad_segs_table else "No"}
+    * Date range: {options.start_date}, {options.end_date}
+    """
 
 
 def combine_ids(obj):
@@ -138,7 +154,12 @@ def run(options):
                                 merge_options.min_encounter_time_minutes)
         )
 
-    writer = WriteEncountersToBQ(merge_options, cloud_options)
+    writer = WriteEncountersToBQ(
+        table_id=merge_options.sink_table,
+        cloud_opts=cloud_options,
+        description=get_description(merge_options),
+        write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE
+    )
 
     merged = (merged
         | "FilteredToDicts" >> Encounter.ToDict()
