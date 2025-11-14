@@ -1,42 +1,56 @@
 from google.cloud import bigquery
-from pipeline.schemas.output import build as output_schema
-from pipeline.utils.ver import get_pipe_ver
+
 import apache_beam as beam
+from apache_beam.io.gcp.internal.clients.bigquery import TableSchema
+
 import logging
+
+from typing import Any
 
 list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
 
-class WriteEncountersToBQ(beam.PTransform):
 
-    def __init__(self, options, cloud_opts):
+DELETE_QUERY = """
+DELETE FROM `{table}`
+WHERE DATE(start_time) = '{start_date}'
+"""
+
+logger = logging.getLogger(__name__)
+
+
+class WriteEncountersToBQ(beam.PTransform):
+    def __init__(
+        self,
+        table_id: str,
+        schema: TableSchema,
+        cloud_opts,
+        description: str = None,
+        **kwargs: Any,
+    ):
         self.bqclient = bigquery.Client(project=cloud_opts.project)
-        self.table = options.sink_table
-        self.schema = output_schema()
+        self.table_id = table_id
+        self.schema = schema
         self.labels = list_to_dict(cloud_opts.labels)
-        self.table_description = f"""
-Created by the encounters_pipeline: {get_pipe_ver()}
-* Merges the encounters that are close in time into one long encounter.
-* https://github.com/GlobalFishingWatch/encounters_pipeline
-* Source raw encounters: {self.table}
-* Source vessel id: {options.vessel_id_tables}
-* Source Spatial Measure: {options.spatial_measures_table}
-* Min hours before encounter: {options.min_hours_between_encounters}
-* Skip bad segments table? {"Yes" if options.bad_segs_table else "No"}
-* Date range: {options.start_date}, {options.end_date}
-        """
+        self.description = description
+        self.kwargs = kwargs
+
+    def delete_rows(self, start_date: str) -> None:
+        logger.info("Deleting records in {} from date {}".format(self.table_id, start_date))
+        self.bqclient.query(DELETE_QUERY.format(table=self.table_id, start_date=start_date))
 
     def update_table_metadata(self):
-        table = self.bqclient.get_table(self.table)  # API request
-        table.description = self.table_description
+        table = self.bqclient.get_table(self.table_id)  # API request
+        if self.description is not None:
+            table.description = self.description
+
         table.labels = self.labels
         self.bqclient.update_table(table, ["description", "labels"])  # API request
-        logging.info(f"Update table metadata to output table <{self.table}>")
+        logger.info(f"Update table metadata to output table <{self.table_id}>")
 
     def expand(self, pcoll):
-        return pcoll | "WriteEncounters" >> beam.io.WriteToBigQuery(
-            self.table,
+        return pcoll | beam.io.WriteToBigQuery(
+            self.table_id,
             schema=self.schema,
-            write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
             additional_bq_parameters={
                 "timePartitioning": {
@@ -47,5 +61,6 @@ Created by the encounters_pipeline: {get_pipe_ver()}
                 "clustering": {
                     "fields": ["start_time"]
                 },
-            }
+            },
+            **self.kwargs,
         )

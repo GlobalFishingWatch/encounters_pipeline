@@ -1,3 +1,4 @@
+import apache_beam as beam
 from apache_beam import Filter
 from apache_beam import Flatten
 from apache_beam import Map
@@ -16,18 +17,29 @@ from pipeline.transforms.add_id import AddRawEncounterId
 from pipeline.transforms.compute_adjacency import ComputeAdjacency
 from pipeline.transforms.compute_encounters import ComputeEncounters
 from pipeline.transforms.resample import Resample
-from pipeline.transforms.write_date_sharded import WriteDateSharded
+from pipeline.transforms.writers import WriteEncountersToBQ
 from pipeline.transforms.readers import ReadSources
+from pipeline.utils.ver import get_pipe_ver
 
 import datetime
 import logging
 import pytz
 
 
-
 RESAMPLE_INCREMENT_MINUTES = 10.0
 MAX_GAP_HOURS = 1.0
 PRECURSOR_DAYS = 1
+
+
+def get_description(options: CreateOptions):
+    return f"""\
+Created by the encounters_pipeline: {get_pipe_ver()}.
+* Creates raw encounters, reads the data from source and computes encounters over windows between start_date and end_date.
+* https://github.com/GlobalFishingWatch/encounters_pipeline
+* Sources: {options.source_tables}
+* Maximum distance for vessels to be elegible (km): {options.max_encounter_dist_km}
+* Minimum minutes of vessel adjacency before we have an encounter: {options.min_encounter_time_minutes}
+"""
 
 
 def create_queries(args):
@@ -104,6 +116,8 @@ def run(options):
     start_date = datetime.datetime.strptime(create_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
     end_date= datetime.datetime.strptime(create_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
 
+    schema = build_raw_encounter()
+
     sources = [
         (p | f"Read_{i}" >> ReadSources(
             query=query,
@@ -111,6 +125,17 @@ def run(options):
         )) for (i, query) in enumerate(create_queries(create_options))
     ]
 
+    writer = WriteEncountersToBQ(
+        table_id=create_options.raw_table,
+        schema=schema,
+        cloud_opts=cloud_options,
+        description=get_description(create_options),
+        write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+    )
+
+    # Ensure we delete any existing rows from the date to be processed.
+    # Needed to maintain consistency we re-processing dates.
+    writer.delete_rows(start_date=create_options.start_date)
 
     adjacencies = (sources
         | Flatten()
@@ -124,8 +149,8 @@ def run(options):
         | RawEncounter.ToDict()
         | AddRawEncounterId()
         | Map(lambda x: TimestampedValue(x, x['end_time'])) 
-        | Map(check_schema, schema=schema_to_obj(build_raw_encounter()))
-        | WriteDateSharded(cloud_options, create_options, build_raw_encounter())
+        | Map(check_schema, schema=schema_to_obj(schema))
+        | writer
     )
 
     result = p.run()
