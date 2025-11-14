@@ -1,9 +1,11 @@
-import datetime
+from datetime import datetime, timedelta
+
 import logging
 
 import numpy as np
 import pytz
 import six
+import apache_beam as beam
 from apache_beam import (CoGroupByKey, Filter, FlatMap, Flatten, Map, Pipeline,
                          io)
 from apache_beam.options.pipeline_options import (GoogleCloudOptions,
@@ -12,11 +14,26 @@ from apache_beam.runners import PipelineState
 
 from pipeline.objects.encounter import Encounter, RawEncounter
 from pipeline.options.merge_options import MergeOptions
-from pipeline.schemas.output import build as build_schema
+from pipeline.schemas.output import build as merge_schema
 from pipeline.transforms.add_id import AddEncounterId
 from pipeline.transforms.merge_encounters import MergeEncounters
 from pipeline.transforms.readers import ReadSources
 from pipeline.transforms.writers import WriteEncountersToBQ
+from pipeline.utils.ver import get_pipe_ver
+
+
+def get_description(options: MergeOptions):
+    return f"""\
+Created by the encounters_pipeline: {get_pipe_ver()}
+* Merges the encounters that are close in time into one long encounter.
+* https://github.com/GlobalFishingWatch/encounters_pipeline
+* Source raw encounters: {options.sink_table}
+* Source vessel id: {options.vessel_id_tables}
+* Source Spatial Measure: {options.spatial_measures_table}
+* Min hours before encounter: {options.min_hours_between_encounters}
+* Skip bad segments table? {"Yes" if options.bad_segs_table else "No"}
+* Date range: {options.start_date}, {options.end_date}
+"""
 
 
 def combine_ids(obj):
@@ -25,7 +42,14 @@ def combine_ids(obj):
                                  six.ensure_binary(obj[f'vessel_{v}_seg_id']))
     return obj
 
-def create_queries(args, start_date, end_date):
+
+def create_queries(args):
+    start_time = datetime.fromisoformat(args.start_date).replace(tzinfo=pytz.utc)
+    end_time = datetime.fromisoformat(args.end_date).replace(tzinfo=pytz.utc)
+
+    start_date = start_time.date()
+    end_date = end_time.date()
+
     template = """
     WITH
 
@@ -34,8 +58,8 @@ def create_queries(args, start_date, end_date):
                 CAST(UNIX_MICROS(start_time) AS FLOAT64) / 1000000 AS start_time,
                 CAST(UNIX_MICROS(end_time) AS FLOAT64) / 1000000 AS end_time,
                 format("lon:%+07.2f_lat:%+07.2f", mean_longitude, mean_latitude) as gridcode,
-        FROM `{raw_table}*` events
-        WHERE _table_suffix BETWEEN '{start:%Y%m%d}' AND '{end:%Y%m%d}' 
+        FROM `{raw_table}` events
+        WHERE DATE(start_time) BETWEEN '{start}' AND '{end}' 
           {condition}
     ),
 
@@ -76,14 +100,18 @@ def create_queries(args, start_date, end_date):
     start_window = start_date
     shift = 1000
     while start_window <= end_date:
-        end_window = min(start_window + datetime.timedelta(days=shift), end_date)
-        query = template.format(raw_table=args.raw_table,
-                                condition=condition,
-                                vessel_id_query=vessel_id_query,
-                                start=start_window, end=end_window,
-                                spatial_measures_table=args.spatial_measures_table)
+        end_window = min(start_window + timedelta(days=shift), end_date)
+        query = template.format(
+            raw_table=args.raw_table,
+            condition=condition,
+            vessel_id_query=vessel_id_query,
+            start=start_window.isoformat(),
+            end=end_window.isoformat(),
+            spatial_measures_table=args.spatial_measures_table)
+
         yield query
-        start_window = end_window + datetime.timedelta(days=1)
+        start_window = end_window + timedelta(days=1)
+
 
 def filter_by_distance(obj, min_distance_from_port_km):
     distance_from_shore_m = obj.pop('distance_from_shore_m')
@@ -112,10 +140,7 @@ def run(options):
     from `{merge_options.spatial_measures_table}`
     """
 
-    start_date = datetime.datetime.strptime(merge_options.start_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
-    end_date= datetime.datetime.strptime(merge_options.end_date, '%Y-%m-%d').replace(tzinfo=pytz.utc)
-
-    queries = create_queries(merge_options, start_date, end_date)
+    queries = create_queries(merge_options)
 
     sources = [
         (p | f"Read_{i}" >> ReadSources(
@@ -138,7 +163,13 @@ def run(options):
                                 merge_options.min_encounter_time_minutes)
         )
 
-    writer = WriteEncountersToBQ(merge_options, cloud_options)
+    writer = WriteEncountersToBQ(
+        table_id=merge_options.sink_table,
+        schema=merge_schema(),
+        cloud_opts=cloud_options,
+        description=get_description(merge_options),
+        write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE
+    )
 
     merged = (merged
         | "FilteredToDicts" >> Encounter.ToDict()
