@@ -39,6 +39,7 @@ Created by the encounters_pipeline: {get_pipe_ver()}.
 * Sources: {options.source_tables}
 * Maximum distance for vessels to be elegible (km): {options.max_encounter_dist_km}
 * Minimum minutes of vessel adjacency before we have an encounter: {options.min_encounter_time_minutes}
+* Last processing date range: [{options.start_date}, {options.end_date}].
 """
 
 
@@ -159,10 +160,13 @@ def run(options):
 
     if create_options.wait_for_job or options.view_as(StandardOptions).runner == 'DirectRunner':
         result.wait_until_finish()
+        if result.state in success_states:
+            writer.update_table_metadata()
     else:
         success_states.add(PipelineState.RUNNING)
         success_states.add(PipelineState.UNKNOWN)
         success_states.add(PipelineState.PENDING)
+
 
     logging.info('returning with result.state=%s' % result.state)
     return 0 if result.state in success_states else 1
