@@ -11,8 +11,9 @@ list_to_dict = lambda labels: {x.split('=')[0]:x.split('=')[1] for x in labels}
 
 
 DELETE_QUERY = """
-DELETE FROM `{table}`
-WHERE DATE(start_time) = '{start_date}'
+    DELETE FROM `{table}`
+    WHERE DATE({partitioning_field})
+    BETWEEN '{start_date}' AND '{end_date}'
 """
 
 logger = logging.getLogger(__name__)
@@ -34,9 +35,17 @@ class WriteEncountersToBQ(beam.PTransform):
         self.description = description
         self.kwargs = kwargs
 
-    def delete_rows(self, start_date: str) -> None:
-        logger.info("Deleting records in {} from date {}".format(self.table_id, start_date))
-        self.bqclient.query(DELETE_QUERY.format(table=self.table_id, start_date=start_date))
+    def delete_rows(self, start_date: str, end_date: str) -> None:
+        logger.info(
+            "Deleting records in {} from date range [{},{}] (inclusive)"
+            .format(self.table_id, start_date, end_date))
+
+        self.bqclient.query(DELETE_QUERY.format(
+            table=self.table_id,
+            partitioning_field="start_time",
+            start_date=start_date,
+            end_date=end_date
+        ))
 
     def update_table_metadata(self):
         table = self.bqclient.get_table(self.table_id)  # API request
