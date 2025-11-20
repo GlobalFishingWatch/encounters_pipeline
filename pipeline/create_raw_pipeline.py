@@ -134,10 +134,6 @@ def run(options):
         write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
     )
 
-    # Ensure we delete any existing rows from the date to be processed.
-    # Needed to maintain consistency we re-processing dates.
-    writer.delete_rows(start_date=create_options.start_date)
-
     adjacencies = (sources
         | Flatten()
         | Record.FromDict()
@@ -153,6 +149,10 @@ def run(options):
         | Map(check_schema, schema=schema_to_obj(schema))
         | writer
     )
+
+    # Ensure we delete any existing rows from the date to be processed.
+    # Needed to maintain consistency we re-processing dates.
+    writer.delete_rows(start_date=create_options.start_date, end_date=create_options.end_date)
 
     result = p.run()
 
